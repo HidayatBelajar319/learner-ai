@@ -212,7 +212,7 @@ Project ini dilisensikan di bawah **MIT License** - lihat file [LICENSE](LICENSE
 
 ## 📧 Kontak
 
-- **Developer:** Newis Maharani Syahrir
+- **Developer:** Hidayat3911
 - **Email:** [hidayat3911@sd.belajar.id](mailto:hidayat3911@sd.belajar.id)
 - **Website:** [https://learner.hidayat3911.workers.dev](https://learner.hidayat3911.workers.dev)
 - **GitHub:** [https://github.com/HidayatBelajar319/learner-ai](https://github.com/HidayatBelajar319/learner-ai)
