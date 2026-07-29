@@ -1,0 +1,29 @@
+name = "learner"
+main = "src/worker.ts"
+compatibility_date = "2026-07-26"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = "./dist"
+
+[[d1_databases]]
+binding = "LEARNER_DB"
+database_name = "learner-db"
+database_id = "a15a865b-db7a-4e49-8dfc-f891d194d30d"
+
+[[kv_namespaces]]
+binding = "LEARNER_SESSION"
+id = "cee71fa873944122a5d43d539904dd54"
+
+[[kv_namespaces]]
+binding = "LEARNER_CACHE"
+id = "ec46d51079294d6c8b316a4c21bafd8b"
+
+[vars]
+APP_NAME = "Learner AI"
+APP_URL = "https://learner.hidayat3911.workers.dev"
+APP_ENV = "development"
+JWT_SECRET = "learner-ai-dev-jwt-secret-2026"
+
+[dev]
+port = 8787

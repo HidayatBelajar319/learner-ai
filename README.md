@@ -233,3 +233,5 @@ Jika Anda menyukai project ini:
 *Project ini hanya dilakukan oleh Solo Developer Anak Berusia 12 tahun Kelas 7 SMP.*
 
 *Dokumen terakhir diperbarui: 26 Juli 2026*
+
+*Project Ini DiModify dan diBuild Oleh OpenCode AI, Bukan Developer tetapi AI-nya.*
