@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getAssetFromKV, serveSinglePageApp } from '@cloudflare/kv-asset-handler';
+import manifest from '__STATIC_CONTENT_MANIFEST';
 import { Env } from '@/types';
 import { getCorsHeaders } from '@/api/utils/helpers';
 import auth from '@/api/auth';
@@ -48,7 +49,7 @@ export default {
         },
         {
           ASSET_NAMESPACE: env.__STATIC_CONTENT,
-          ASSET_MANIFEST: {},
+          ASSET_MANIFEST: manifest,
           mapRequestToAsset: serveSinglePageApp,
         },
       );
