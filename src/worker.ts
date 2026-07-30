@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { getAssetFromKV, serveSinglePageApp } from '@cloudflare/kv-asset-handler';
 import { Env } from '@/types';
 import { getCorsHeaders } from '@/api/utils/helpers';
 import auth from '@/api/auth';
@@ -32,7 +33,7 @@ app.onError((err, c) => {
 });
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith('/api/')) {
@@ -40,8 +41,17 @@ export default {
     }
 
     try {
-      const response = await fetch(new URL('/index.html', url));
-      return response;
+      return await getAssetFromKV(
+        {
+          request,
+          waitUntil: (p: Promise<unknown>) => ctx.waitUntil(p),
+        },
+        {
+          ASSET_NAMESPACE: env.__STATIC_CONTENT,
+          ASSET_MANIFEST: {},
+          mapRequestToAsset: serveSinglePageApp,
+        },
+      );
     } catch {
       return new Response('Not Found', { status: 404 });
     }
