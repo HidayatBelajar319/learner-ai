@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "vite build",
+    "postbuild": "node scripts/generate-asset-index.mjs",
     "deploy": "npm run build && npx wrangler deploy",
     "typecheck": "tsc --noEmit",
     "test": "jest"

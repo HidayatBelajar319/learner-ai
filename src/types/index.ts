@@ -119,7 +119,6 @@ export interface Env {
   LEARNER_STORAGE: R2Bucket;
   LEARNER_SESSION: KVNamespace;
   LEARNER_CACHE: KVNamespace;
-  __STATIC_CONTENT: KVNamespace;
   JWT_SECRET: string;
   MISTRAL_API_KEY: string;
   OPENAI_API_KEY?: string;
