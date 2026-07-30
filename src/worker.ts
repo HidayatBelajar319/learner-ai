@@ -40,9 +40,10 @@ export default {
     }
 
     try {
-      return await env.ASSETS.fetch(new URL('/index.html', request.url));
+      const response = await fetch(new URL('/index.html', url));
+      return response;
     } catch {
-      return await fetch(new URL('/index.html', request.url));
+      return new Response('Not Found', { status: 404 });
     }
   },
 };
