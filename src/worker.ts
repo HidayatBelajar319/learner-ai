@@ -7,7 +7,7 @@ import learning from '@/api/learning';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', async (c, next) => {
+app.use('/api/*', async (c, next) => {
   const corsHeaders = getCorsHeaders(c.env);
   if (c.req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -32,5 +32,21 @@ app.onError((err, c) => {
 });
 
 export default {
-  fetch: app.fetch,
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (url.pathname.startsWith('/api/')) {
+      return app.fetch(request, env);
+    }
+
+    try {
+      const response = await env.ASSETS.fetch(request);
+      if (response.status === 404) {
+        return env.ASSETS.fetch(new URL('/index.html', request.url));
+      }
+      return response;
+    } catch {
+      return new Response('Not Found', { status: 404 });
+    }
+  },
 };
