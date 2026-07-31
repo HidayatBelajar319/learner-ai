@@ -26,6 +26,14 @@ const subjects = [
   { value: 'ipa', label: 'IPA' },
   { value: 'ips', label: 'IPS' },
   { value: 'pemrograman', label: 'Pemrograman' },
+  { value: 'pendidikan-agama', label: 'Pendidikan Agama dan Budi Pekerti' },
+  { value: 'pancasila', label: 'Pendidikan Pancasila' },
+  { value: 'pjok', label: 'PJOK' },
+  { value: 'informatika', label: 'Informatika' },
+  { value: 'seni-budaya', label: 'Seni dan Budaya' },
+  { value: 'prakarya', label: 'Prakarya' },
+  { value: 'sejarah', label: 'Sejarah' },
+  { value: 'kewirausahaan', label: 'Kreatif dan Kewirausahaan' },
 ];
 
 export default function Flashcards() {

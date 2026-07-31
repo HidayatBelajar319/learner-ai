@@ -1,4 +1,4 @@
-export type ProviderName = 'openrouter' | 'openai' | 'mistral' | 'anthropic' | 'google' | 'omniroute';
+export type ProviderName = 'openrouter' | 'openai' | 'mistral' | 'anthropic' | 'google' | 'omniroute' | 'workersai';
 
 export interface ProviderConfig {
   name: ProviderName;
@@ -59,6 +59,22 @@ export const PROVIDERS: ProviderConfig[] = [
     models: ['auto'],
     requiresKey: false,
     customBaseUrl: true,
+  },
+  {
+    name: 'workersai',
+    label: 'Workers AI (Cloudflare)',
+    baseUrl: '',
+    defaultModel: '@cf/openai/gpt-oss-20b',
+    models: [
+      '@cf/openai/gpt-oss-20b',
+      '@cf/openai/gpt-oss-120b',
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/qwen/qwen3-30b-a3b-fp8',
+      '@cf/mistralai/mistral-small-3.1-24b-instruct',
+      '@cf/zai-org/glm-4.7-flash',
+      '@cf/meta/llama-3.2-3b-instruct',
+    ],
+    requiresKey: false,
   },
 ];
 
@@ -159,10 +175,10 @@ async function anthropicChat(baseUrl: string, apiKey: string, req: ChatRequest):
         };
       }
       if (m.tool_calls && m.tool_calls.length > 0) {
-        return {
-          role: 'assistant',
-          content: m.content || undefined,
-          tool_calls: m.tool_calls.map((tc) => ({
+        const contentArr: any[] = [];
+        if (m.content) contentArr.push({ type: 'text', text: m.content });
+        contentArr.push(
+          ...m.tool_calls.map((tc) => ({
             type: 'tool_use',
             id: tc.id,
             name: tc.function.name,
@@ -170,6 +186,10 @@ async function anthropicChat(baseUrl: string, apiKey: string, req: ChatRequest):
               try { return JSON.parse(tc.function.arguments); } catch { return {}; }
             })(),
           })),
+        );
+        return {
+          role: 'assistant',
+          content: contentArr,
         };
       }
       return { role: m.role, content: m.content };
@@ -201,7 +221,13 @@ async function anthropicChat(baseUrl: string, apiKey: string, req: ChatRequest):
   };
   if (system) body.system = system;
   if (req.temperature !== undefined) body.temperature = req.temperature;
-  if (req.tools && req.tools.length > 0) body.tools = req.tools;
+  if (req.tools && req.tools.length > 0) {
+    body.tools = req.tools.map((t: any) => ({
+      name: t.function.name,
+      description: t.function.description,
+      input_schema: t.function.parameters,
+    }));
+  }
 
   const res = await fetch(`${baseUrl.replace(/\/+$/, '')}/messages`, {
     method: 'POST',
@@ -251,25 +277,29 @@ async function googleChat(baseUrl: string, apiKey: string, req: ChatRequest): Pr
   const model = req.model ?? 'gemini-2.0-flash-001';
 
   const contents: any[] = [];
-  const toolMessages: string[] = [];
+  const pendingToolNames: string[] = [];
+  const toolResults: string[] = [];
 
   for (const m of req.messages) {
     if (m.role === 'system') continue;
     if (m.role === 'tool') {
-      toolMessages.push(m.content);
+      toolResults.push(m.content);
       continue;
     }
     if (m.tool_calls && m.tool_calls.length > 0) {
       contents.push({
         role: 'model',
-        parts: m.tool_calls.map((tc) => ({
-          functionCall: {
-            name: tc.function.name,
-            args: (() => {
-              try { return JSON.parse(tc.function.arguments); } catch { return {}; }
-            })(),
-          },
-        })),
+        parts: m.tool_calls.map((tc) => {
+          pendingToolNames.push(tc.function.name);
+          return {
+            functionCall: {
+              name: tc.function.name,
+              args: (() => {
+                try { return JSON.parse(tc.function.arguments); } catch { return {}; }
+              })(),
+            },
+          };
+        }),
       });
       continue;
     }
@@ -279,10 +309,15 @@ async function googleChat(baseUrl: string, apiKey: string, req: ChatRequest): Pr
     });
   }
 
-  if (toolMessages.length > 0) {
+  if (toolResults.length > 0) {
     contents.push({
       role: 'user',
-      parts: toolMessages.map((t) => ({ functionResponse: { name: 'tool', response: { result: t } } })),
+      parts: toolResults.map((t, i) => ({
+        functionResponse: {
+          name: pendingToolNames[i] ?? 'tool',
+          response: { result: t },
+        },
+      })),
     });
   }
 
@@ -295,7 +330,13 @@ async function googleChat(baseUrl: string, apiKey: string, req: ChatRequest): Pr
   };
   if (system) body.systemInstruction = { parts: [{ text: system }] };
   if (req.tools && req.tools.length > 0) {
-    body.tools = [{ functionDeclarations: req.tools }];
+    body.tools = [{
+      functionDeclarations: req.tools.map((t: any) => ({
+        name: t.function.name,
+        description: t.function.description,
+        parameters: t.function.parameters,
+      })),
+    }];
   }
 
   const res = await fetch(
@@ -344,6 +385,55 @@ async function googleChat(baseUrl: string, apiKey: string, req: ChatRequest): Pr
 
 export interface ChatOptions {
   baseUrl?: string;
+  ai?: unknown;
+}
+
+async function workersaiChat(ai: any, req: ChatRequest): Promise<ChatResponse> {
+  const model = req.model ?? '@cf/openai/gpt-oss-20b';
+  const messages = req.messages
+    .filter((m) => m.role === 'system' || m.role === 'user' || m.role === 'assistant')
+    .map((m) => ({ role: m.role, content: m.content }));
+
+  const input: Record<string, unknown> = { messages };
+  if (req.temperature !== undefined) input.temperature = req.temperature;
+  if (req.max_tokens !== undefined) input.max_tokens = req.max_tokens;
+  else input.max_tokens = 4096;
+
+  const res: any = await ai.run(model, input);
+
+  let content = '';
+  if (typeof res?.response === 'string' && res.response.trim()) {
+    content = res.response;
+  } else {
+    const msg = res?.choices?.[0]?.message;
+    if (typeof msg?.content === 'string' && msg.content.trim()) {
+      content = msg.content;
+    } else if (typeof msg?.reasoning_content === 'string') {
+      content = msg.reasoning_content;
+    } else if (Array.isArray(msg?.content)) {
+      content = msg.content.map((b: any) => (typeof b?.text === 'string' ? b.text : '')).join('');
+    } else if (typeof res?.response === 'string') {
+      content = res.response;
+    } else if (Array.isArray(res?.response)) {
+      content = res.response.map((b: any) => (typeof b?.text === 'string' ? b.text : '')).join('');
+    }
+  }
+
+  if (!content) {
+    throw new Error(`Model ${model} tidak menghasilkan respons. Coba pilih model lain di Pengaturan.`);
+  }
+
+  return {
+    content,
+    model,
+    usage: res?.usage
+      ? {
+          prompt_tokens: res.usage.prompt_tokens ?? 0,
+          completion_tokens: res.usage.completion_tokens ?? 0,
+          total_tokens: (res.usage.prompt_tokens ?? 0) + (res.usage.completion_tokens ?? 0),
+        }
+      : undefined,
+  };
 }
 
 export async function chat(provider: ProviderName, apiKey: string, req: ChatRequest, options: ChatOptions = {}): Promise<ChatResponse> {
@@ -352,6 +442,11 @@ export async function chat(provider: ProviderName, apiKey: string, req: ChatRequ
 
   const baseUrl = options.baseUrl || config.baseUrl;
   const model = req.model ?? config.defaultModel;
+
+  if (provider === 'workersai') {
+    if (!options.ai) throw new Error('Workers AI (Cloudflare) tidak tersedia di environment ini');
+    return workersaiChat(options.ai, { ...req, model });
+  }
 
   if (provider === 'anthropic') {
     return anthropicChat(baseUrl, apiKey, { ...req, model });

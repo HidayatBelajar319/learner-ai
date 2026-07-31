@@ -34,7 +34,7 @@ export const TOOLS: ToolDefinition[] = [
       const subjects = rows.results.map((r: any) => r.subject);
       if (subjects.length === 0) {
         return {
-          default: ['mathematics', 'bahasa-indonesia', 'bahasa-inggris', 'ipa', 'ips', 'pemrograman', 'bahasa-asing', 'keterampilan'],
+          default: ['mathematics', 'bahasa-indonesia', 'bahasa-inggris', 'ipa', 'ips', 'pemrograman', 'bahasa-asing', 'keterampilan', 'pendidikan-agama', 'pancasila', 'pjok', 'informatika', 'seni-budaya', 'prakarya', 'sejarah', 'kewirausahaan'],
         };
       }
       return { subjects };

@@ -71,8 +71,9 @@ export function safeJsonParse<T>(text: string): T | null {
  * @param input - Input string
  * @returns String yang sudah di-sanitize
  */
-export function sanitizeString(input: string): string {
-  return input.trim().replace(/[<>'"]/g, '');
+export function sanitizeString(input: unknown): string {
+  if (input == null) return '';
+  return String(input).trim().replace(/[<>'"]/g, '');
 }
 
 /**

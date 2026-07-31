@@ -28,7 +28,24 @@ const subjects = [
   { value: 'ipa', label: 'IPA' },
   { value: 'ips', label: 'IPS' },
   { value: 'pemrograman', label: 'Pemrograman' },
+  { value: 'pendidikan-agama', label: 'Pendidikan Agama dan Budi Pekerti' },
+  { value: 'pancasila', label: 'Pendidikan Pancasila' },
+  { value: 'pjok', label: 'PJOK' },
+  { value: 'informatika', label: 'Informatika' },
+  { value: 'seni-budaya', label: 'Seni dan Budaya' },
+  { value: 'prakarya', label: 'Prakarya' },
+  { value: 'sejarah', label: 'Sejarah' },
+  { value: 'kewirausahaan', label: 'Kreatif dan Kewirausahaan' },
 ];
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 export default function Certificates() {
   const { token } = useAuthStore();
@@ -69,8 +86,13 @@ export default function Certificates() {
   const handlePrint = (cert: CertData) => {
     const win = window.open('', '_blank');
     if (!win) return;
+    const title = escapeHtml(cert.title);
+    const name = escapeHtml(cert.full_name);
+    const subjectLabel = cert.subject
+      ? escapeHtml(subjects.find(s => s.value === cert.subject)?.label || cert.subject)
+      : '';
     win.document.write(`
-      <html><head><title>${cert.title}</title>
+      <html><head><title>${title}</title>
       <style>
         body { font-family: 'Georgia', serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f3f4f6; }
         .cert { width: 800px; padding: 60px; background: white; border: 8px solid #4F46E5; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
@@ -82,10 +104,10 @@ export default function Certificates() {
       </style></head><body>
       <div class="cert">
         <h1>🏆 Sertifikat</h1>
-        <p class="subtitle">${cert.title}</p>
-        <div class="name">${cert.full_name}</div>
+        <p class="subtitle">${title}</p>
+        <div class="name">${name}</div>
         <p class="detail">Level ${cert.level} &middot; ${cert.total_xp} Total XP</p>
-        ${cert.subject ? `<p class="detail">${subjects.find(s => s.value === cert.subject)?.label || cert.subject}</p>` : ''}
+        ${subjectLabel ? `<p class="detail">${subjectLabel}</p>` : ''}
         <p class="detail">Diterbitkan: ${new Date(cert.issued_at).toLocaleDateString('id-ID')}</p>
         <div class="footer">Learner AI &mdash; Platform Pembelajaran Berbasis AI</div>
       </div>

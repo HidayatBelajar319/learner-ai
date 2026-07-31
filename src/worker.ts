@@ -8,6 +8,8 @@ import learning from '@/api/learning';
 import ai from '@/api/ai';
 import evaluation from '@/api/evaluation';
 import admin from '@/api/admin';
+import visual from '@/api/visual';
+import social from '@/api/social';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -27,6 +29,8 @@ app.route('/api/learning', learning);
 app.route('/api/ai', ai);
 app.route('/api/evaluation', evaluation);
 app.route('/api/admin', admin);
+app.route('/api/visual', visual);
+app.route('/api/social', social);
 
 app.get('/api/health', (c) =>
   c.json({ success: true, message: 'Learner AI API berjalan', version: '0.1.0' }),

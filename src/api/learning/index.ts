@@ -98,9 +98,9 @@ learning.put('/sessions/:sessionId/progress', async (c) => {
   }
 
   const session = await c.env.LEARNER_DB
-    .prepare('SELECT id FROM learning_sessions WHERE id = ? AND user_id = ?')
+    .prepare('SELECT id, status FROM learning_sessions WHERE id = ? AND user_id = ?')
     .bind(sessionId, payload.sub)
-    .first();
+    .first<{ id: string; status: string }>();
 
   if (!session) return errorResponse('Sesi tidak ditemukan', 404);
 
@@ -114,7 +114,7 @@ learning.put('/sessions/:sessionId/progress', async (c) => {
     .bind(progress, newStatus, endedAt, sessionId)
     .run();
 
-  if (newStatus === 'completed') {
+  if (newStatus === 'completed' && session.status !== 'completed') {
     const xpGained = 30;
     await addXp(c.env.LEARNER_DB, payload.sub, xpGained);
   }
@@ -178,7 +178,9 @@ learning.post('/history', async (c) => {
 
   const streak = await bumpStreak(c.env.LEARNER_DB, payload.sub);
   await checkStreakAchievements(c.env.LEARNER_DB, payload.sub, streak.current);
-  await awardAchievement(c.env.LEARNER_DB, payload.sub, 'first_lesson');
+  if (activity_type === 'material') {
+    await awardAchievement(c.env.LEARNER_DB, payload.sub, 'first_lesson');
+  }
 
   const xpRow = await c.env.LEARNER_DB
     .prepare('SELECT total_xp FROM user_xp WHERE user_id = ?')

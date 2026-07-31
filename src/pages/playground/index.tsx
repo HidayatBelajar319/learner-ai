@@ -71,6 +71,7 @@ export default function Playground() {
 
   const deleteFile = (id: string) => {
     setFiles(prev => {
+      if (prev.length <= 1) return prev;
       const next = prev.filter(f => f.id !== id);
       if (activeId === id && next.length > 0) setActiveId(next[0].id);
       return next;

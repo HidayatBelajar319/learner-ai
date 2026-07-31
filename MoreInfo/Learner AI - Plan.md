@@ -39,35 +39,35 @@
 
 ### Fase 1: Fondasi Core (Bulan 1-2)
 
-- [ ] Setup struktur folder proyek
-- [ ] Setup TypeScript &amp; konfigurasi
-- [ ] Setup Wrangler &amp; Cloudflare
-- [ ] Implementasi autentikasi dasar
-- [ ] Setup database (D1)
-- [ ] Setup storage (R2)
-- [ ] Dashboard utama
-- [ ] Sistem konten statis
-- [ ] Sistem pembelajaran dasar
+- [x] Setup struktur folder proyek
+- [x] Setup TypeScript &amp; konfigurasi
+- [x] Setup Wrangler &amp; Cloudflare
+- [x] Implementasi autentikasi dasar (JWT + TOTP)
+- [x] Setup database (D1)
+- [x] Setup storage (R2 &amp; KV)
+- [x] Dashboard utama
+- [x] Sistem konten statis (seed kurikulum SD–SMK, 134 lesson)
+- [x] Sistem pembelajaran dasar
 
 ### Fase 2: AI &amp; Pembelajaran (Bulan 3-4)
 
-- [ ] Integrasi AI (NLP) penuh
-- [ ] Sistem evaluasi &amp; quiz
-- [ ] Sistem progress tracking
-- [ ] Sistem gamifikasi (XP, Level, Badge)
-- [ ] UI/UX untuk pembelajaran
-- [ ] Responsif design
-- [ ] Dark mode
+- [x] Integrasi AI (NLP) penuh (multi-provider + BYOK)
+- [x] Sistem evaluasi &amp; quiz
+- [x] Sistem progress tracking
+- [x] Sistem gamifikasi (XP, Level, Badge/Achievements)
+- [x] UI/UX untuk pembelajaran
+- [x] Responsif design
+- [x] Dark mode
 
 ### Fase 3: Fitur Lanjutan (Bulan 5-6)
 
-- [ ] AI Code Generation
-- [ ] Playground coding
-- [ ] Flashcard system
-- [ ] Mind map generator
-- [ ] Diagram generator
-- [ ] Sistem sertifikat
-- [ ] Sistem sosial (optional)
+- [x] AI Code Generation
+- [x] Playground coding
+- [x] Flashcard system
+- [x] Mind map generator
+- [x] Diagram generator
+- [x] Sistem sertifikat
+- [x] Sistem sosial (optional)
 
 ### Fase 4: Optimasi (Bulan 7-8)
 
@@ -111,7 +111,7 @@
 - AI NLP dasar
 - Autentikasi
 
-**Status:** ⬜ Belum dimulai
+**Status:** ✅ Selesai
 
 ---
 
@@ -126,7 +126,7 @@
 - Sistem gamifikasi
 - UI/UX lengkap
 
-**Status:** ⬜ Belum dimulai
+**Status:** ✅ Selesai
 
 ---
 
@@ -141,7 +141,7 @@
 - Sistem sertifikat
 - Semua fitur utama
 
-**Status:** ⬜ Belum dimulai
+**Status:** ✅ Selesai (flashcard, sertifikat, playground, AI code, mind map, diagram)
 
 ---
 
@@ -206,7 +206,7 @@
 
 | Fitur          | Deskripsi               | Fase | Status |
 | -------------- | ----------------------- | ---- | ------ |
-| Sosial         | Teman, chat, kolaborasi | 3    | ⬜      |
+| Sosial         | Teman, chat, kolaborasi | 3    | ✅      |
 | Voice AI       | Voice recognition       | 6    | ⬜      |
 | Video Tutorial | Video pembelajaran      | 6    | ⬜      |
 | Mobile App     | Aplikasi mobile         | 6+   | ⬜      |
@@ -299,6 +299,15 @@
 - **Test** setiap fitur sebelum deploy
 - **Backup** data secara berkala
 - **Monitor** performa dan usage
+
+### Catatan Kurikulum (31 Juli 2026)
+
+- Materi kurikulum lengkap SD–SMK sudah masuk sebagai seed D1 (`migrations/0006_seed_curriculum.sql`, 134 lesson).
+- Sumber data: `scripts/curriculum/*.mjs`. Cara menambah materi baru:
+  1. Tambah/ubah file data di `scripts/curriculum/`.
+  2. Jalankan `node scripts/seed-content.mjs`.
+  3. Terapkan migration ke D1 dan deploy (lihat `wrangler.toml`).
+- Teknologi real: **React + Vite + TypeScript + Hono (Cloudflare Workers)**, D1, R2, KV, Tailwind.
 
 ### Catatan AI
 

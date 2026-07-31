@@ -3,7 +3,6 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/contexts/auth-store';
 import XpProgress from '@/components/learning/xp-progress';
 import Logo from '@/components/brand/logo';
-
 const baseNavItems = [
   { to: '/dashboard', label: 'Beranda', icon: '🏠' },
   { to: '/learn', label: 'Belajar', icon: '📚' },
@@ -12,13 +11,16 @@ const baseNavItems = [
   { to: '/flashcards', label: 'Flashcards', icon: '🃏' },
   { to: '/certificates', label: 'Sertifikat', icon: '🏆' },
   { to: '/playground', label: 'Playground', icon: '💻' },
+  { to: '/visual', label: 'Visual', icon: '🧠' },
+  { to: '/social', label: 'Sosial', icon: '👥' },
   { to: '/settings', label: 'Pengaturan', icon: '⚙️' },
 ];
 
 export default function RootLayout() {
-  const { user, clearAuth } = useAuthStore();
+  const { user, clearAuth, accountNotice } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
 
   const navItems = user?.role === 'admin'
     ? [...baseNavItems, { to: '/admin', label: 'Admin', icon: '🛡️' }]
@@ -31,6 +33,23 @@ export default function RootLayout() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+      {accountNotice?.inactive && !noticeDismissed && (
+        <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between gap-3 bg-red-600 px-4 py-2.5 text-sm text-white shadow-md dark:bg-red-700">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span>
+              Akun kamu dinonaktifkan{accountNotice.reason ? ` karena ${accountNotice.reason}` : ''}. Kamu akan keluar otomatis setelah beberapa saat.
+            </span>
+          </div>
+          <button
+            onClick={() => setNoticeDismissed(true)}
+            className="shrink-0 rounded px-2 py-0.5 text-xs font-semibold text-white/80 hover:bg-white/20 hover:text-white"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
       <aside className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform dark:border-gray-800 dark:bg-gray-900 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6 dark:border-gray-800">
           <Logo size={28} />

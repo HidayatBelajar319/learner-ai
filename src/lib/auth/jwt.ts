@@ -28,7 +28,7 @@ export async function createToken(
  * @param secret - JWT secret key
  * @returns Payload jika valid, null jika tidak valid
  */
-export async function verifyToken(
+export async function verifyTokenRaw(
   token: string,
   secret: string,
 ): Promise<AuthPayload | null> {
@@ -39,6 +39,16 @@ export async function verifyToken(
   } catch {
     return null;
   }
+}
+
+export async function verifyToken(
+  token: string,
+  secret: string,
+): Promise<AuthPayload | null> {
+  const payload = await verifyTokenRaw(token, secret);
+  if (!payload) return null;
+  if (payload.step === '2fa') return null;
+  return payload;
 }
 
 /**

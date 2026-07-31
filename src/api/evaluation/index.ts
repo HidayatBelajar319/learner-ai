@@ -50,7 +50,7 @@ evaluation.post('/quizzes/generate', async (c) => {
     .bind(payload.sub)
     .all<{ provider: string; key_value: string; model: string | null; base_url: string | null }>();
 
-  const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string }> = [];
+  const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string; ai?: unknown }> = [];
 
   for (const k of userKeys.results) {
     candidates.push({ provider: k.provider as ProviderName, apiKey: k.key_value, model: k.model ?? undefined, baseUrl: k.base_url ?? undefined });
@@ -58,6 +58,13 @@ evaluation.post('/quizzes/generate', async (c) => {
 
   const envKey = c.env.MISTRAL_API_KEY;
   if (envKey) candidates.push({ provider: 'mistral', apiKey: envKey });
+
+  const workersCand = candidates.find(c => c.provider === 'workersai');
+  if (workersCand && c.env.AI) {
+    workersCand.ai = c.env.AI;
+  } else if (c.env.AI) {
+    candidates.push({ provider: 'workersai', apiKey: '', ai: c.env.AI });
+  }
 
   for (const cand of candidates) {
     try {
@@ -131,6 +138,13 @@ evaluation.post('/quizzes/:id/submit', async (c) => {
     .first<any>();
 
   if (!quiz) return errorResponse('Quiz tidak ditemukan', 404);
+
+  const attempted = await c.env.LEARNER_DB
+    .prepare("SELECT id FROM learning_history WHERE user_id = ? AND content_id = ? AND activity_type = 'quiz'")
+    .bind(payload.sub, quiz.id)
+    .first();
+
+  if (attempted) return errorResponse('Quiz sudah pernah dikerjakan', 409);
 
   const questions = JSON.parse(quiz.questions);
   const { answers } = body;
@@ -208,6 +222,7 @@ interface ProviderCandidate {
   apiKey: string;
   model?: string;
   baseUrl?: string;
+  ai?: unknown;
 }
 
 async function generateQuestionsWithProvider(
@@ -218,7 +233,7 @@ async function generateQuestionsWithProvider(
   count: number,
 ): Promise<Question[] | null> {
   const apiKey = cand.apiKey;
-  if (!apiKey && !cand.baseUrl) return null;
+  if (!apiKey && !cand.baseUrl && !cand.ai) return null;
 
   const prompt = `Buatkan ${count} soal pilihan ganda tentang "${topic}" (mata pelajaran ${subject}) untuk level ${level}.
 
@@ -239,7 +254,7 @@ correct adalah index jawaban benar (0-3).`;
     model: cand.model,
     temperature: 0.8,
     max_tokens: 4096,
-  }, { baseUrl: cand.baseUrl });
+  }, { baseUrl: cand.baseUrl, ai: cand.ai });
 
   const json = extractJson(result.content);
   if (!json || !Array.isArray(json)) return null;

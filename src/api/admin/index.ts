@@ -56,7 +56,7 @@ admin.get('/users', async (c) => {
 
   const users = await c.env.LEARNER_DB
     .prepare(
-      `SELECT u.id, u.email, u.username, u.full_name, u.role, u.is_active, u.created_at, x.total_xp
+      `SELECT u.id, u.email, u.username, u.full_name, u.role, u.is_active, u.inactive_reason, u.created_at, x.total_xp
        FROM users u LEFT JOIN user_xp x ON x.user_id = u.id
        ORDER BY u.created_at DESC LIMIT 100`,
     )
@@ -67,7 +67,7 @@ admin.get('/users', async (c) => {
 
 /**
  * POST /api/admin/users/:id/toggle
- * Aktif/nonaktifkan user
+ * Aktif/nonaktifkan user dengan alasan
  */
 admin.post('/users/:id/toggle', async (c) => {
   const payload = await requireAdmin(c.req.raw, c.env);
@@ -76,19 +76,87 @@ admin.post('/users/:id/toggle', async (c) => {
   const id = c.req.param('id');
   if (id === payload.sub) return errorResponse('Tidak bisa menonaktifkan akun sendiri', 400);
 
+  let body: { reason?: string };
+  try { body = await c.req.json(); } catch { body = {}; }
+
   const user = await c.env.LEARNER_DB
     .prepare('SELECT is_active FROM users WHERE id = ?')
     .bind(id)
     .first<{ is_active: number }>();
   if (!user) return errorResponse('User tidak ditemukan', 404);
 
-  const newState = user.is_active === 1 ? 0 : 1;
+  const disabling = user.is_active === 1;
+  const reason = (body.reason ?? '').trim();
+
+  if (disabling && reason.length < 3) {
+    return errorResponse('Alasan nonaktifkan wajib diisi (minimal 3 karakter)', 400);
+  }
+
+  if (disabling) {
+    await c.env.LEARNER_DB
+      .prepare('UPDATE users SET is_active = 0, inactive_reason = ? WHERE id = ?')
+      .bind(reason, id)
+      .run();
+  } else {
+    await c.env.LEARNER_DB
+      .prepare('UPDATE users SET is_active = 1, inactive_reason = NULL WHERE id = ?')
+      .bind(id)
+      .run();
+    await c.env.LEARNER_SESSION.delete(`acct-notice:${id}`);
+  }
+
+  return successResponse(disabling ? 'User dinonaktifkan' : 'User diaktifkan', { is_active: disabling ? 0 : 1 });
+});
+
+/**
+ * POST /api/admin/users/:id/delete
+ * Hapus akun user beserta semua datanya, dengan alasan
+ */
+admin.post('/users/:id/delete', async (c) => {
+  const payload = await requireAdmin(c.req.raw, c.env);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const id = c.req.param('id');
+  if (id === payload.sub) return errorResponse('Tidak bisa menghapus akun sendiri', 400);
+
+  let body: { reason?: string };
+  try { body = await c.req.json(); } catch { body = {}; }
+
+  const reason = (body.reason ?? '').trim();
+  if (reason.length < 3) {
+    return errorResponse('Alasan hapus wajib diisi (minimal 3 karakter)', 400);
+  }
+
+  const user = await c.env.LEARNER_DB
+    .prepare('SELECT email FROM users WHERE id = ?')
+    .bind(id)
+    .first<{ email: string }>();
+  if (!user) return errorResponse('User tidak ditemukan', 404);
+
   await c.env.LEARNER_DB
-    .prepare('UPDATE users SET is_active = ? WHERE id = ?')
-    .bind(newState, id)
+    .prepare('INSERT INTO user_deletions (id, user_id, email, reason, deleted_by, deleted_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(crypto.randomUUID(), id, user.email, reason, payload.email, new Date().toISOString())
     .run();
 
-  return successResponse(newState === 1 ? 'User diaktifkan' : 'User dinonaktifkan', { is_active: newState });
+  await c.env.LEARNER_DB.batch([
+    c.env.LEARNER_DB.prepare('DELETE FROM user_xp WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM user_streaks WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM user_2fa WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM learning_history WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM learning_sessions WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM user_progress WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM achievements WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM badges WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM certificates WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM flashcard_decks WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM flashcards WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM api_keys WHERE user_id = ?').bind(id),
+    c.env.LEARNER_DB.prepare('DELETE FROM users WHERE id = ?').bind(id),
+  ]);
+
+  await c.env.LEARNER_SESSION.delete(`acct-notice:${id}`);
+
+  return successResponse('Akun berhasil dihapus');
 });
 
 export default admin;

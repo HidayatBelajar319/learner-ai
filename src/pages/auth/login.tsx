@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/contexts/auth-store';
 import { api } from '@/lib/api';
 
@@ -33,6 +33,8 @@ export default function Login() {
   const [twoFALoading, setTwoFALoading] = useState(false);
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const notice = (location.state as { message?: string } | null)?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +92,12 @@ export default function Login() {
           {error && (
             <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
               {error}
+            </div>
+          )}
+
+          {notice && !twoFA && (
+            <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+              {notice}
             </div>
           )}
 

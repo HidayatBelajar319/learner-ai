@@ -27,7 +27,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   const result = await response.json() as Record<string, unknown>;
 
   if (!response.ok) {
-    throw new Error((result.message as string) || 'Terjadi kesalahan');
+    const error = new Error((result.message as string) || 'Terjadi kesalahan') as Error & {
+      status?: number;
+      data?: unknown;
+    };
+    error.status = response.status;
+    error.data = result.data;
+    throw error;
   }
 
   return result as T;

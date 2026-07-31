@@ -304,6 +304,19 @@
 | Bulanan  | Reset setiap bulan  | ⬜      |
 
 
+### Sistem Sosial
+
+
+| Fitur        | Deskripsi                                | Status |
+| ------------ | ---------------------------------------- | ------ |
+| **Pencarian**| Cari pengguna berdasarkan nama/username  | ✅      |
+| **Pertemanan**| Kirim, terima, tolak, batalkan permintaan | ✅      |
+| **Chat**     | Chat real-time antar teman (polling)     | ✅      |
+| **Notifikasi**| Badge unread &amp; permintaan tertunda   | ✅      |
+| **Peringkat**| Leaderboard berdasarkan total XP         | ✅      |
+| **Kolaborasi**| Belajar bersama antar teman              | ⬜      |
+
+
 ### Sistem Sertifikat
 
 

@@ -22,6 +22,25 @@ interface QuizResponse {
   };
 }
 
+interface SubmitResponse {
+  success: boolean;
+  data: {
+    score: number;
+    correct: number;
+    total: number;
+    xp_gained: number;
+    results: Array<{
+      question_id: number;
+      question: string;
+      correct: number;
+      correct_answer: string;
+      explanation: string | null;
+      user_answer: number;
+      is_correct: boolean;
+    }>;
+  };
+}
+
 const subjects = [
   { value: 'mathematics', label: 'Matematika' },
   { value: 'bahasa-indonesia', label: 'Bahasa Indonesia' },
@@ -29,6 +48,14 @@ const subjects = [
   { value: 'ipa', label: 'IPA' },
   { value: 'ips', label: 'IPS' },
   { value: 'pemrograman', label: 'Pemrograman' },
+  { value: 'pendidikan-agama', label: 'Pendidikan Agama dan Budi Pekerti' },
+  { value: 'pancasila', label: 'Pendidikan Pancasila' },
+  { value: 'pjok', label: 'PJOK' },
+  { value: 'informatika', label: 'Informatika' },
+  { value: 'seni-budaya', label: 'Seni dan Budaya' },
+  { value: 'prakarya', label: 'Prakarya' },
+  { value: 'sejarah', label: 'Sejarah' },
+  { value: 'kewirausahaan', label: 'Kreatif dan Kewirausahaan' },
 ];
 
 const levels = ['Dasar', 'Menengah', 'Mahir'];
@@ -55,6 +82,10 @@ export default function Quiz() {
   const [answered, setAnswered] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [quizSource, setQuizSource] = useState<'ai' | 'template' | null>(null);
+  const [quizId, setQuizId] = useState('');
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [resultData, setResultData] = useState<SubmitResponse['data'] | null>(null);
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +101,10 @@ export default function Quiz() {
       const res = await api.post<QuizResponse>('/evaluation/quizzes/generate', { subject, topic, level, count }, token);
       setQuestions(res.data.questions);
       setQuizSource(res.data.source ?? null);
+      setQuizId(res.data.id);
+      setAnswers([]);
+      setResultData(null);
+      setSubmitError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal membuat quiz');
     } finally {
@@ -88,6 +123,11 @@ export default function Quiz() {
     if (answered) return;
     setSelected(idx);
     setAnswered(true);
+    setAnswers((prev) => {
+      const copy = [...prev];
+      copy[currentQ] = idx;
+      return copy;
+    });
     if (idx === questions[currentQ].correct) {
       setScore((s) => s + 1);
     }
@@ -96,10 +136,15 @@ export default function Quiz() {
   const handleNext = async () => {
     if (currentQ === questions.length - 1) {
       setSubmitting(true);
+      setSubmitError('');
       try {
-        setShowResult(true);
+        const res = await api.post<SubmitResponse>(`/evaluation/quizzes/${quizId}/submit`, { answers }, token);
+        setResultData(res.data);
+      } catch (err) {
+        setSubmitError(err instanceof Error ? err.message : 'Gagal menyimpan hasil quiz');
       } finally {
         setSubmitting(false);
+        setShowResult(true);
       }
     } else {
       setCurrentQ((q) => q + 1);
@@ -120,18 +165,35 @@ export default function Quiz() {
   }
 
   if (showResult) {
+    const displayScore = resultData ? resultData.score : Math.round((score / questions.length) * 100);
     return (
       <div className="flex items-center justify-center pt-16">
         <div className="w-full max-w-md px-4 text-center">
           <span className="text-6xl">🎉</span>
           <h1 className="mt-4 text-2xl font-bold text-gray-900 dark:text-gray-100">Quiz Selesai!</h1>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
-            Kamu mendapat skor {score} dari {questions.length}
-          </p>
+          {resultData ? (
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              Kamu menjawab {resultData.correct} benar dari {resultData.total} soal
+            </p>
+          ) : (
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
+              Kamu mendapat skor {score} dari {questions.length}
+            </p>
+          )}
           <div className="mt-6 text-5xl font-bold text-primary-500">
-            {Math.round((score / questions.length) * 100)}%
+            {displayScore}%
           </div>
-          <button onClick={() => { setCurrentQ(0); setScore(0); setShowResult(false); setSelected(null); setAnswered(false); setQuestions([]); setTopic(''); }} className="btn-primary mt-8">
+          {resultData && (
+            <p className="mt-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              +{resultData.xp_gained} XP
+            </p>
+          )}
+          {submitError && (
+            <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              {submitError}
+            </div>
+          )}
+          <button onClick={() => { setCurrentQ(0); setScore(0); setShowResult(false); setSelected(null); setAnswered(false); setQuestions([]); setTopic(''); setQuizId(''); setAnswers([]); setResultData(null); setSubmitError(''); }} className="btn-primary mt-8">
             Coba Lagi
           </button>
         </div>

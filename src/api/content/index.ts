@@ -67,6 +67,62 @@ content.get('/subjects', async (c) => {
       description: 'Bisnis, Desain, Produktivitas, dan lainnya',
       levels: ['Pemula', 'Menengah', 'Mahir'],
     },
+    {
+      id: 'pendidikan-agama',
+      name: 'Pendidikan Agama dan Budi Pekerti',
+      icon: '🕌',
+      description: 'Akidah, Ibadah, Akhlak, Budi Pekerti',
+      levels: ['SD', 'SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'pancasila',
+      name: 'Pendidikan Pancasila',
+      icon: '🇮🇩',
+      description: 'Pancasila, UUD 1945, Kewarganegaraan, Bela Negara',
+      levels: ['SD', 'SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'pjok',
+      name: 'Pendidikan Jasmani, Olahraga, dan Kesehatan',
+      icon: '⚽',
+      description: 'Olahraga, Kebugaran, Kesehatan, Permainan',
+      levels: ['SD', 'SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'informatika',
+      name: 'Informatika',
+      icon: '🖥️',
+      description: 'TIK, Algoritma, Analisis Data, Jaringan Komputer',
+      levels: ['SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'seni-budaya',
+      name: 'Seni dan Budaya',
+      icon: '🎨',
+      description: 'Seni Musik, Seni Rupa, Seni Tari, Seni Teater',
+      levels: ['SD', 'SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'prakarya',
+      name: 'Prakarya',
+      icon: '🛠️',
+      description: 'Budi Daya, Kerajinan, Rekayasa, Pengolahan',
+      levels: ['SMP', 'SMA', 'SMK'],
+    },
+    {
+      id: 'sejarah',
+      name: 'Sejarah',
+      icon: '🏛️',
+      description: 'Sejarah Indonesia, Sejarah Dunia, Peradaban',
+      levels: ['SMA', 'SMK'],
+    },
+    {
+      id: 'kewirausahaan',
+      name: 'Kreatif dan Kewirausahaan',
+      icon: '🚀',
+      description: 'Kreativitas, Kewirausahaan, Bisnis, UMKM',
+      levels: ['SMA', 'SMK'],
+    },
   ];
 
   const rows = await c.env.LEARNER_DB
@@ -110,25 +166,6 @@ content.get('/subjects/:subjectId/topics', async (c) => {
     .all();
 
   return successResponse('Daftar topik berhasil diambil', results.results);
-});
-
-/**
- * GET /api/content/:contentId
- * Mendapatkan konten detail berdasarkan ID
- */
-content.get('/:contentId', async (c) => {
-  const contentId = c.req.param('contentId');
-
-  const item = await c.env.LEARNER_DB
-    .prepare('SELECT * FROM content WHERE id = ?')
-    .bind(contentId)
-    .first();
-
-  if (!item) {
-    return errorResponse('Konten tidak ditemukan', 404);
-  }
-
-  return successResponse('Konten berhasil diambil', item);
 });
 
 /**
@@ -196,6 +233,25 @@ content.get('/learning/progress', async (c) => {
     .all();
 
   return successResponse('Progress belajar berhasil diambil', progress.results);
+});
+
+/**
+ * GET /api/content/:contentId
+ * Mendapatkan konten detail berdasarkan ID
+ */
+content.get('/:contentId', async (c) => {
+  const contentId = c.req.param('contentId');
+
+  const item = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM content WHERE id = ?')
+    .bind(contentId)
+    .first();
+
+  if (!item) {
+    return errorResponse('Konten tidak ditemukan', 404);
+  }
+
+  return successResponse('Konten berhasil diambil', item);
 });
 
 export default content;

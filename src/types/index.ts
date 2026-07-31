@@ -120,6 +120,7 @@ export interface Env {
   LEARNER_STORAGE: R2Bucket;
   LEARNER_SESSION: KVNamespace;
   LEARNER_CACHE: KVNamespace;
+  AI?: AiBinding;
   JWT_SECRET: string;
   MISTRAL_API_KEY: string;
   OPENAI_API_KEY?: string;
@@ -127,4 +128,8 @@ export interface Env {
   APP_URL: string;
   ADMIN_EMAILS?: string;
   PREMIUM_DOMAINS?: string;
+}
+
+export interface AiBinding {
+  run(model: string, options?: Record<string, unknown>): Promise<{ response?: string } | any>;
 }

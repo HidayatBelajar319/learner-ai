@@ -77,6 +77,8 @@ export default function Settings() {
         setSelectedModel('');
         setTestResult({ ok: true, message: 'API key disimpan.' });
       }
+    } catch (e: any) {
+      setTestResult({ ok: false, message: `❌ ${e.message || 'Gagal menyimpan API key'}` });
     } finally {
       setSaving(false);
     }

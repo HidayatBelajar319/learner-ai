@@ -14,12 +14,20 @@ interface UserData {
   streak?: { current: number; longest: number };
 }
 
+export interface AccountNotice {
+  inactive: boolean;
+  reason: string | null;
+  deleted: boolean;
+}
+
 interface AuthState {
   user: UserData | null;
   token: string | null;
   isLoading: boolean;
+  accountNotice: AccountNotice | null;
   setAuth: (user: UserData, token: string) => void;
   setUser: (user: UserData) => void;
+  setAccountNotice: (notice: AccountNotice | null) => void;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -30,9 +38,11 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isLoading: false,
-      setAuth: (user, token) => set({ user, token }),
+      accountNotice: null,
+      setAuth: (user, token) => set({ user, token, accountNotice: null }),
       setUser: (user) => set({ user }),
-      clearAuth: () => set({ user: null, token: null }),
+      setAccountNotice: (accountNotice) => set({ accountNotice }),
+      clearAuth: () => set({ user: null, token: null, accountNotice: null }),
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {

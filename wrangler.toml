@@ -19,6 +19,9 @@ id = "cee71fa873944122a5d43d539904dd54"
 binding = "LEARNER_CACHE"
 id = "ec46d51079294d6c8b316a4c21bafd8b"
 
+[ai]
+binding = "AI"
+
 [vars]
 APP_NAME = "Learner AI"
 APP_URL = "https://learner.hidayat3911.workers.dev"

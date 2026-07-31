@@ -162,7 +162,7 @@ npm run dev
 
 ```bash
 npm run deploy
-# URL: https://learner.hidayat3911.workers.dev
+# URL: https://<NamaWeb>.<USER>.workers.dev
 ```
 
 ---

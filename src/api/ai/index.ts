@@ -48,14 +48,14 @@ ai.post('/chat', async (c) => {
     .all<{ provider: string; key_value: string; model: string | null; base_url: string | null }>();
 
   const requested = userKeys.results.find(k => k.provider === provider) ?? userKeys.results[0];
-  if (!requested && !c.env.MISTRAL_API_KEY) {
-    return errorResponse('API key tidak ditemukan. Tambahkan key di pengaturan.', 400);
+  if (!requested && !c.env.MISTRAL_API_KEY && !c.env.AI) {
+    return errorResponse('API key AI tidak ditemukan. Tambahkan key di Pengaturan atau pakai Workers AI bawaan.', 400);
   }
 
   const ctx: ToolContext = { env: c.env, userId: payload.sub, email: payload.email };
   const workingMessages: ChatMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
 
-  const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string }> = [];
+  const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string; ai?: unknown }> = [];
   const ordered = requested ? [requested, ...userKeys.results.filter(k => k.provider !== requested.provider)] : userKeys.results;
   for (const k of ordered) {
     candidates.push({ provider: k.provider as ProviderName, apiKey: k.key_value, model: model || k.model || undefined, baseUrl: k.base_url || undefined });
@@ -63,12 +63,19 @@ ai.post('/chat', async (c) => {
   if (c.env.MISTRAL_API_KEY && !candidates.some(c => c.provider === 'mistral')) {
     candidates.push({ provider: 'mistral', apiKey: c.env.MISTRAL_API_KEY, model: model || undefined });
   }
+  const workersCand = candidates.find(c => c.provider === 'workersai');
+  if (workersCand && c.env.AI) {
+    workersCand.ai = c.env.AI;
+    if (model && !workersCand.model) workersCand.model = model;
+  } else if (c.env.AI) {
+    candidates.push({ provider: 'workersai', apiKey: '', ai: c.env.AI, model: model || undefined });
+  }
 
   const errors: string[] = [];
 
   for (const cand of candidates) {
     try {
-      const result = await chatWithToolLoop(cand, workingMessages, use_tools, ctx);
+      const result = await chatWithToolLoop(cand, [...workingMessages], use_tools, ctx);
       return successResponse('Respon AI berhasil', {
         content: result.content,
         model: result.model,
@@ -86,7 +93,7 @@ ai.post('/chat', async (c) => {
 });
 
 async function chatWithToolLoop(
-  cand: { provider: ProviderName; apiKey: string; model?: string; baseUrl?: string },
+  cand: { provider: ProviderName; apiKey: string; model?: string; baseUrl?: string; ai?: unknown },
   workingMessages: ChatMessage[],
   useTools: boolean,
   ctx: ToolContext,
@@ -100,7 +107,7 @@ async function chatWithToolLoop(
     model,
     tools: useTools ? toolSchemas() : undefined,
     tool_choice: useTools ? 'auto' : undefined,
-  }, { baseUrl });
+  }, { baseUrl, ai: cand.ai });
 
   let iterations = 0;
 
@@ -145,7 +152,7 @@ async function chatWithToolLoop(
       model,
       tools: useTools ? toolSchemas() : undefined,
       tool_choice: useTools ? 'auto' : undefined,
-    }, { baseUrl });
+    }, { baseUrl, ai: cand.ai });
     iterations++;
   }
 
@@ -201,7 +208,7 @@ ai.post('/keys/test', async (c) => {
     .first<{ key_value: string; model: string | null; base_url: string | null }>();
 
   const apiKey = key || stored?.key_value || '';
-  if (!apiKey && !providerConfig.customBaseUrl) {
+  if (!apiKey && !providerConfig.customBaseUrl && providerConfig.requiresKey) {
     return errorResponse('API key belum diisi', 400);
   }
 
@@ -214,7 +221,7 @@ ai.post('/keys/test', async (c) => {
       messages: [{ role: 'user', content: 'Balas satu kata: OK' }],
       model: testModel,
       max_tokens: 10,
-    }, { baseUrl: cleanBaseUrl });
+    }, { baseUrl: cleanBaseUrl, ai: c.env.AI });
 
     return successResponse('Koneksi berhasil', {
       provider,
@@ -253,7 +260,7 @@ ai.post('/models', async (c) => {
   const apiKey = key || stored?.key_value || '';
   const cleanBaseUrl = (baseUrl || stored?.base_url || providerConfig.baseUrl).replace(/\/+$/, '');
 
-  if (provider === 'google' || provider === 'anthropic') {
+  if (provider === 'google' || provider === 'anthropic' || provider === 'workersai') {
     return successResponse('Daftar model', {
       models: providerConfig.models,
       listable: false,

@@ -6,6 +6,7 @@ import {
   createToken,
   extractToken,
   verifyToken,
+  verifyTokenRaw,
   isValidEmail,
   validatePassword,
   validateUsername,
@@ -13,6 +14,7 @@ import {
 import {
   successResponse,
   errorResponse,
+  jsonResponse,
   generateId,
   now,
   sanitizeString,
@@ -172,7 +174,7 @@ auth.post('/login', async (c) => {
 
   const user = await c.env.LEARNER_DB
     .prepare(
-      `SELECT id, email, username, password_hash, full_name, profile, preferences, role, is_active
+      `SELECT id, email, username, password_hash, full_name, profile, preferences, role, is_active, inactive_reason
        FROM users WHERE email = ?`,
     )
     .bind(cleanEmail)
@@ -186,14 +188,29 @@ auth.post('/login', async (c) => {
       preferences: string;
       role: string;
       is_active: number;
+      inactive_reason: string | null;
     }>();
 
   if (!user) {
+    const deleted = await c.env.LEARNER_DB
+      .prepare('SELECT reason FROM user_deletions WHERE email = ?')
+      .bind(cleanEmail)
+      .first<{ reason: string }>();
+    if (deleted) {
+      return jsonResponse({
+        success: false,
+        message: `Akun kamu telah dihapus. Alasan: ${deleted.reason}`,
+        data: { account_deleted: true, reason: deleted.reason },
+      }, 410);
+    }
     return errorResponse('Email atau password salah', 401);
   }
 
   if (!user.is_active) {
-    return errorResponse('Akun tidak aktif. Hubungi admin.', 403);
+    return errorResponse(
+      `Akun kamu dinonaktifkan. Alasan: ${user.inactive_reason || 'kebijakan admin'}`,
+      403,
+    );
   }
 
   const isValid = await verifyPassword(password, user.password_hash);
@@ -228,6 +245,8 @@ auth.post('/login', async (c) => {
     .bind(now(), user.id)
     .run();
 
+  await c.env.LEARNER_SESSION.delete(`acct-notice:${user.id}`);
+
   return successResponse('Login berhasil', {
     user: {
       id: user.id,
@@ -259,15 +278,28 @@ auth.get('/me', async (c) => {
     return errorResponse('Token tidak valid atau sudah expired', 401);
   }
 
+  const deleted = await c.env.LEARNER_DB
+    .prepare('SELECT reason FROM user_deletions WHERE user_id = ?')
+    .bind(payload.sub)
+    .first<{ reason: string }>();
+
+  if (deleted) {
+    return jsonResponse({
+      success: false,
+      message: `Akun kamu telah dihapus. Alasan: ${deleted.reason}`,
+      data: { account_deleted: true, reason: deleted.reason },
+    }, 410);
+  }
+
   const user = await c.env.LEARNER_DB
     .prepare(
-      `SELECT u.id, u.email, u.username, u.full_name, u.profile, u.preferences, u.role, u.created_at,
+      `SELECT u.id, u.email, u.username, u.full_name, u.profile, u.preferences, u.role, u.is_active, u.inactive_reason, u.created_at,
               x.total_xp, x.level,
               s.current_streak, s.longest_streak
        FROM users u
        LEFT JOIN user_xp x ON x.user_id = u.id
        LEFT JOIN user_streaks s ON s.user_id = u.id
-       WHERE u.id = ? AND u.is_active = 1`,
+       WHERE u.id = ?`,
     )
     .bind(payload.sub)
     .first<{
@@ -278,6 +310,8 @@ auth.get('/me', async (c) => {
       profile: string;
       preferences: string;
       role: string;
+      is_active: number;
+      inactive_reason: string | null;
       created_at: string;
       total_xp: number;
       level: number;
@@ -287,6 +321,26 @@ auth.get('/me', async (c) => {
 
   if (!user) {
     return errorResponse('User tidak ditemukan', 404);
+  }
+
+  let accountStatus: { inactive: boolean; reason: string | null; notice_count?: number; force_logout?: boolean } = {
+    inactive: false,
+    reason: null,
+  };
+
+  if (!user.is_active) {
+    const key = `acct-notice:${payload.sub}`;
+    const countStr = await c.env.LEARNER_SESSION.get(key);
+    const count = (parseInt(countStr || '0', 10) || 0) + 1;
+    const forceLogout = count >= 4;
+    await c.env.LEARNER_SESSION.put(key, String(count), { expirationTtl: 7 * 86400 });
+    if (forceLogout) await c.env.LEARNER_SESSION.delete(key);
+    accountStatus = {
+      inactive: true,
+      reason: user.inactive_reason || null,
+      notice_count: count,
+      force_logout: forceLogout,
+    };
   }
 
   return successResponse('Data user berhasil diambil', {
@@ -306,6 +360,7 @@ auth.get('/me', async (c) => {
       current: user.current_streak ?? 0,
       longest: user.longest_streak ?? 0,
     },
+    account_status: accountStatus,
   });
 });
 
@@ -372,8 +427,17 @@ auth.post('/2fa/verify', async (c) => {
  * Validasi TOTP saat login
  */
 auth.post('/2fa/validate', async (c) => {
-  let body: { user_id: string; token: string };
+  let body: { user_id: string; token: string; partial_token?: string };
   try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
+
+  if (body.partial_token) {
+    const partial = await verifyTokenRaw(body.partial_token, c.env.JWT_SECRET);
+    if (!partial || partial.step !== '2fa' || partial.sub !== body.user_id) {
+      return errorResponse('Sesi login tidak valid', 401);
+    }
+  } else {
+    return errorResponse('Sesi login tidak valid', 401);
+  }
 
   const record = await c.env.LEARNER_DB
     .prepare('SELECT totp_secret, backup_codes FROM user_2fa WHERE user_id = ? AND totp_enabled = 1')
@@ -552,10 +616,11 @@ auth.post('/profile', async (c) => {
     .bind(JSON.stringify(profile), now(), payload.sub)
     .run();
 
-  if (body.full_name && body.full_name.trim().length >= 2) {
+  const cleanFullName = body.full_name ? sanitizeString(body.full_name) : '';
+  if (cleanFullName.length >= 2) {
     await c.env.LEARNER_DB
       .prepare('UPDATE users SET full_name = ?, updated_at = ? WHERE id = ?')
-      .bind(body.full_name.trim(), now(), payload.sub)
+      .bind(cleanFullName, now(), payload.sub)
       .run();
   }
 

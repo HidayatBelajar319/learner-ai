@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/contexts/auth-store';
 import { useThemeStore } from '@/contexts/theme-store';
+import { api } from '@/lib/api';
 import RootLayout from '@/components/layout/root-layout';
 import Dashboard from '@/pages/dashboard';
 import Login from '@/pages/auth/login';
@@ -12,6 +13,8 @@ import Quiz from '@/pages/quiz';
 import Flashcards from '@/pages/flashcards';
 import Certificates from '@/pages/certificates';
 import Playground from '@/pages/playground';
+import Visual from '@/pages/visual';
+import Social from '@/pages/social';
 import Settings from '@/pages/settings';
 import AdminDashboard from '@/pages/admin';
 import TermsOfService from '@/pages/tos';
@@ -48,6 +51,46 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { resolved } = useThemeStore();
+  const { token, setUser, setLoading, clearAuth, setAccountNotice } = useAuthStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    setLoading(true);
+    setAccountNotice(null);
+    api.get<{ success: boolean; data: any }>('/auth/me', token)
+      .then((res) => {
+        if (!active) return;
+        setUser(res.data);
+        const status = res.data?.account_status;
+        if (status?.inactive) {
+          setAccountNotice({ inactive: true, reason: status.reason ?? null, deleted: false });
+          if (status.force_logout) {
+            clearAuth();
+            navigate('/login', {
+              replace: true,
+              state: { message: status.reason ? `Akun kamu dinonaktifkan. Alasan: ${status.reason}` : 'Akun kamu dinonaktifkan.' },
+            });
+          }
+        }
+      })
+      .catch((e: any) => {
+        if (!active) return;
+        if (e.status === 410 && e.data?.account_deleted) {
+          clearAuth();
+          navigate('/login', { replace: true, state: { message: e.message } });
+        } else if (e.status === 401 || e.status === 404) {
+          clearAuth();
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [token, navigate, setUser, setLoading, clearAuth, setAccountNotice]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', resolved === 'dark');
@@ -91,6 +134,8 @@ export default function App() {
         <Route path="flashcards" element={<Flashcards />} />
         <Route path="certificates" element={<Certificates />} />
         <Route path="playground" element={<Playground />} />
+        <Route path="visual" element={<Visual />} />
+        <Route path="social" element={<Social />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminDashboard />} />
       </Route>
