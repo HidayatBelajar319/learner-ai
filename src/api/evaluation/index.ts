@@ -1,0 +1,275 @@
+import { Hono } from 'hono';
+import { Env } from '@/types';
+import { successResponse, errorResponse, generateId, now, calculateLevel } from '@/api/utils/helpers';
+import { verifyToken, extractToken } from '@/lib/auth/jwt';
+import { chat, ProviderName, PROVIDERS } from '@/lib/ai/providers';
+import { awardAchievement, bumpStreak, checkXpAchievements, checkStreakAchievements } from '@/api/utils/achievements';
+import { generateSubjectTemplate } from './templates';
+
+const evaluation = new Hono<{ Bindings: Env }>();
+
+async function requireAuth(request: Request, jwtSecret: string) {
+  const token = extractToken(request);
+  if (!token) return null;
+  return verifyToken(token, jwtSecret);
+}
+
+interface Question {
+  id: number;
+  question: string;
+  options: string[];
+  correct: number;
+  explanation?: string;
+}
+
+evaluation.post('/quizzes/generate', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { subject: string; topic: string; level: string; count?: number; provider?: ProviderName };
+  try {
+    body = await c.req.json();
+  } catch {
+    return errorResponse('Format request tidak valid');
+  }
+
+  const { subject, topic, level, count = 5 } = body;
+  if (!subject || !topic || !level) {
+    return errorResponse('subject, topic, dan level wajib diisi', 400);
+  }
+
+  const quizId = generateId();
+
+  let questions: Question[] | null = null;
+  let source: 'ai' | 'template' = 'template';
+
+  const aiErrors: string[] = [];
+
+  const userKeys = await c.env.LEARNER_DB
+    .prepare('SELECT provider, key_value, model, base_url FROM api_keys WHERE user_id = ? AND is_active = 1 ORDER BY updated_at DESC')
+    .bind(payload.sub)
+    .all<{ provider: string; key_value: string; model: string | null; base_url: string | null }>();
+
+  const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string }> = [];
+
+  for (const k of userKeys.results) {
+    candidates.push({ provider: k.provider as ProviderName, apiKey: k.key_value, model: k.model ?? undefined, baseUrl: k.base_url ?? undefined });
+  }
+
+  const envKey = c.env.MISTRAL_API_KEY;
+  if (envKey) candidates.push({ provider: 'mistral', apiKey: envKey });
+
+  for (const cand of candidates) {
+    try {
+      const qs = await generateQuestionsWithProvider(cand, subject, topic, level, count);
+      if (qs && qs.length > 0) {
+        questions = qs;
+        source = 'ai';
+        break;
+      }
+    } catch (err: any) {
+      const label = PROVIDERS.find(p => p.name === cand.provider)?.label ?? cand.provider;
+      aiErrors.push(`${label}: ${err.message ?? 'gagal'}`);
+    }
+  }
+
+  if (!questions || questions.length === 0) {
+    questions = generateSubjectTemplate(subject, topic, count);
+  }
+
+  await c.env.LEARNER_DB
+    .prepare('INSERT INTO quizzes (id, title, subject, topic, level, questions, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(quizId, `Quiz ${topic}`, subject, topic, level, JSON.stringify(questions), now(), now())
+    .run();
+
+  return successResponse('Quiz berhasil dibuat', {
+    id: quizId,
+    subject,
+    topic,
+    level,
+    source,
+    ai_errors: aiErrors.length > 0 ? aiErrors : undefined,
+    questions,
+  });
+});
+
+evaluation.get('/quizzes/:id', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const quiz = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM quizzes WHERE id = ?')
+    .bind(c.req.param('id'))
+    .first<any>();
+
+  if (!quiz) return errorResponse('Quiz tidak ditemukan', 404);
+
+  return successResponse('Data quiz', {
+    id: quiz.id,
+    title: quiz.title,
+    subject: quiz.subject,
+    topic: quiz.topic,
+    level: quiz.level,
+    questions: JSON.parse(quiz.questions),
+  });
+});
+
+evaluation.post('/quizzes/:id/submit', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { answers: number[] };
+  try {
+    body = await c.req.json();
+  } catch {
+    return errorResponse('Format request tidak valid');
+  }
+
+  const quiz = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM quizzes WHERE id = ?')
+    .bind(c.req.param('id'))
+    .first<any>();
+
+  if (!quiz) return errorResponse('Quiz tidak ditemukan', 404);
+
+  const questions = JSON.parse(quiz.questions);
+  const { answers } = body;
+
+  if (!answers || !Array.isArray(answers)) {
+    return errorResponse('answers wajib diisi (array)', 400);
+  }
+
+  let correct = 0;
+  const results = questions.map((q: any, i: number) => {
+    const userAnswer = answers[i];
+    const isCorrect = userAnswer === q.correct;
+    if (isCorrect) correct++;
+    return {
+      question_id: i,
+      question: q.question,
+      correct: q.correct,
+      correct_answer: q.options[q.correct],
+      explanation: q.explanation ?? null,
+      user_answer: userAnswer,
+      is_correct: isCorrect,
+    };
+  });
+
+  const total = questions.length;
+  const score = Math.round((correct / total) * 100);
+
+  const historyId = generateId();
+  await c.env.LEARNER_DB
+    .prepare('INSERT INTO learning_history (id, user_id, activity_type, content_id, score, duration, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(historyId, payload.sub, 'quiz', quiz.id, score, 0, now())
+    .run();
+
+  const xpGained = score >= 80 ? 50 : score >= 50 ? 30 : 10;
+
+  const currentXp = await c.env.LEARNER_DB
+    .prepare('SELECT total_xp FROM user_xp WHERE user_id = ?')
+    .bind(payload.sub)
+    .first<{ total_xp: number }>();
+
+  const newXp = (currentXp?.total_xp ?? 0) + xpGained;
+  const newLevel = calculateLevel(newXp);
+
+  await c.env.LEARNER_DB
+    .prepare('UPDATE user_xp SET total_xp = ?, level = ?, last_updated = ? WHERE user_id = ?')
+    .bind(newXp, newLevel, now(), payload.sub)
+    .run();
+
+  const streak = await bumpStreak(c.env.LEARNER_DB, payload.sub);
+  await checkStreakAchievements(c.env.LEARNER_DB, payload.sub, streak.current);
+  await checkXpAchievements(c.env.LEARNER_DB, payload.sub, newXp);
+
+  await awardAchievement(c.env.LEARNER_DB, payload.sub, 'first_quiz');
+
+  const quizCount = await c.env.LEARNER_DB
+    .prepare("SELECT COUNT(*) as count FROM learning_history WHERE user_id = ? AND activity_type = 'quiz'")
+    .bind(payload.sub)
+    .first<{ count: number }>();
+
+  if ((quizCount?.count ?? 0) >= 10) {
+    await awardAchievement(c.env.LEARNER_DB, payload.sub, 'quiz_10');
+  }
+
+  return successResponse('Quiz selesai', {
+    score,
+    correct,
+    total,
+    xp_gained: xpGained,
+    results,
+  });
+});
+
+interface ProviderCandidate {
+  provider: ProviderName;
+  apiKey: string;
+  model?: string;
+  baseUrl?: string;
+}
+
+async function generateQuestionsWithProvider(
+  cand: ProviderCandidate,
+  subject: string,
+  topic: string,
+  level: string,
+  count: number,
+): Promise<Question[] | null> {
+  const apiKey = cand.apiKey;
+  if (!apiKey && !cand.baseUrl) return null;
+
+  const prompt = `Buatkan ${count} soal pilihan ganda tentang "${topic}" (mata pelajaran ${subject}) untuk level ${level}.
+
+PERSYARATAN:
+- Setiap soal harus punya 4 pilihan jawaban (A, B, C, D), hanya 1 benar
+- Soal harus asli, spesifik, dan sesuai kurikulum ${level}
+- Soal harus SESUAI mata pelajaran ${subject}: jangan campur dengan pelajaran lain
+- Variasikan: definisi, contoh soal hitung (jika relevan), analisis singkat, penerapan konsep
+- Tingkat kesulitan sesuai level ${level}
+- Sertakan penjelasan singkat jawaban benar
+
+Keluarkan HANYA JSON array, tanpa teks lain, format:
+[{"question":"...", "options":["A","B","C","D"], "correct":0, "explanation":"..."}]
+correct adalah index jawaban benar (0-3).`;
+
+  const result = await chat(cand.provider, apiKey, {
+    messages: [{ role: 'user', content: prompt }],
+    model: cand.model,
+    temperature: 0.8,
+    max_tokens: 4096,
+  }, { baseUrl: cand.baseUrl });
+
+  const json = extractJson(result.content);
+  if (!json || !Array.isArray(json)) return null;
+
+  return json
+    .slice(0, count)
+    .map((q: any, i: number) => ({
+      id: i,
+      question: String(q.question || '').trim(),
+      options: Array.isArray(q.options) && q.options.length === 4 ? q.options.map(String) : ['A', 'B', 'C', 'D'],
+      correct: Number(q.correct) >= 0 && Number(q.correct) < 4 ? Number(q.correct) : 0,
+      explanation: String(q.explanation || '').trim() || undefined,
+    }))
+    .filter((q: Question) => q.question.length > 0);
+}
+
+function extractJson(text: string): unknown | null {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+}
+
+export default evaluation;

@@ -9,15 +9,14 @@ const content = new Hono<{ Bindings: Env }>();
  * GET /api/content/subjects
  * Mendapatkan daftar semua mata pelajaran
  */
-content.get('/subjects', async (_c) => {
-  const subjects = [
+content.get('/subjects', async (c) => {
+  const baseSubjects = [
     {
       id: 'mathematics',
       name: 'Matematika',
       icon: '📐',
       description: 'Aljabar, Geometri, Kalkulus, Statistika',
       levels: ['SD', 'SMP', 'SMA'],
-      topics_count: 24,
     },
     {
       id: 'bahasa-indonesia',
@@ -25,7 +24,6 @@ content.get('/subjects', async (_c) => {
       icon: '📝',
       description: 'Tata Bahasa, Menulis, Membaca, Sastra',
       levels: ['SD', 'SMP', 'SMA'],
-      topics_count: 18,
     },
     {
       id: 'bahasa-inggris',
@@ -33,7 +31,6 @@ content.get('/subjects', async (_c) => {
       icon: '🇬🇧',
       description: 'Grammar, Vocabulary, Reading, Speaking',
       levels: ['SD', 'SMP', 'SMA'],
-      topics_count: 20,
     },
     {
       id: 'ipa',
@@ -41,7 +38,6 @@ content.get('/subjects', async (_c) => {
       icon: '🔬',
       description: 'Fisika, Kimia, Biologi',
       levels: ['SD', 'SMP', 'SMA'],
-      topics_count: 30,
     },
     {
       id: 'ips',
@@ -49,7 +45,6 @@ content.get('/subjects', async (_c) => {
       icon: '🌍',
       description: 'Sejarah, Geografi, Ekonomi, Sosiologi',
       levels: ['SD', 'SMP', 'SMA'],
-      topics_count: 22,
     },
     {
       id: 'pemrograman',
@@ -57,7 +52,6 @@ content.get('/subjects', async (_c) => {
       icon: '💻',
       description: 'Python, JavaScript, Java, C++, dan lainnya',
       levels: ['Pemula', 'Menengah', 'Mahir'],
-      topics_count: 40,
     },
     {
       id: 'bahasa-asing',
@@ -65,7 +59,6 @@ content.get('/subjects', async (_c) => {
       icon: '🌐',
       description: 'Arab, Mandarin, Jepang, Korea, Prancis, dan lainnya',
       levels: ['Pemula', 'Menengah', 'Mahir'],
-      topics_count: 15,
     },
     {
       id: 'keterampilan',
@@ -73,9 +66,22 @@ content.get('/subjects', async (_c) => {
       icon: '🎯',
       description: 'Bisnis, Desain, Produktivitas, dan lainnya',
       levels: ['Pemula', 'Menengah', 'Mahir'],
-      topics_count: 12,
     },
   ];
+
+  const rows = await c.env.LEARNER_DB
+    .prepare('SELECT subject, COUNT(*) as c FROM content GROUP BY subject')
+    .all<{ subject: string; c: number }>();
+
+  const counts: Record<string, number> = {};
+  rows.results.forEach((r) => {
+    counts[r.subject] = r.c;
+  });
+
+  const subjects = baseSubjects.map((s) => ({
+    ...s,
+    topics_count: counts[s.id] ?? 0,
+  }));
 
   return successResponse('Daftar mata pelajaran berhasil diambil', subjects);
 });

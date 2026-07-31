@@ -81,15 +81,7 @@ export function sanitizeString(input: string): string {
  * @returns Level number (1-10)
  */
 export function calculateLevel(totalXp: number): number {
-  const levels = [0, 100, 500, 1000, 2500, 5000, 10000, 20000, 50000, 100000];
-  let level = 1;
-  for (let i = levels.length - 1; i >= 0; i--) {
-    if (totalXp >= (levels[i] ?? 0)) {
-      level = i + 1;
-      break;
-    }
-  }
-  return level;
+  return Math.floor(totalXp / 100) + 1;
 }
 
 /**

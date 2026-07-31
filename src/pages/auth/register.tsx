@@ -53,25 +53,25 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 to-secondary-50 p-4 dark:from-gray-900 dark:to-gray-950">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <span className="text-5xl">🧠</span>
-          <h1 className="mt-4 text-3xl font-bold text-gray-900">Learner AI</h1>
-          <p className="mt-2 text-gray-500">Buat akun baru</p>
+          <h1 className="mt-4 text-3xl font-bold text-gray-900 dark:text-gray-100">Learner AI</h1>
+          <p className="mt-2 text-gray-500 dark:text-gray-400">Buat akun baru</p>
         </div>
 
-        <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-sm">
-          <h2 className="mb-6 text-xl font-semibold text-gray-900">Daftar</h2>
+        <div className="rounded-xl border border-gray-100 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <h2 className="mb-6 text-xl font-semibold text-gray-900 dark:text-gray-100">Daftar</h2>
 
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
               {error}
             </div>
           )}
 
           {errors.length > 0 && (
-            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
               <ul className="list-inside list-disc space-y-1">
                 {errors.map((err, i) => <li key={i}>{err}</li>)}
               </ul>
@@ -80,7 +80,7 @@ export default function Register() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Nama Lengkap
               </label>
               <input
@@ -95,7 +95,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Username
               </label>
               <input
@@ -110,7 +110,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email
               </label>
               <input
@@ -125,7 +125,7 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Password
               </label>
               <input
@@ -148,7 +148,7 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
             Sudah punya akun?{' '}
             <Link to="/login" className="font-semibold text-primary-500 hover:text-primary-600">
               Masuk

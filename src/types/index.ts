@@ -31,6 +31,7 @@ export interface AuthPayload {
   email: string;
   username: string;
   role: string;
+  step?: string;
   iat: number;
   exp: number;
 }
@@ -124,4 +125,6 @@ export interface Env {
   OPENAI_API_KEY?: string;
   APP_ENV: string;
   APP_URL: string;
+  ADMIN_EMAILS?: string;
+  PREMIUM_DOMAINS?: string;
 }

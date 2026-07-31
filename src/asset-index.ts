@@ -4,9 +4,11 @@ const indexHtml = `<!DOCTYPE html>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Learner AI - Platform Pembelajaran Berbasis AI" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#6366f1" />
     <title>Learner AI</title>
-    <script type="module" crossorigin src="/assets/index-Dyc3gYZi.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-QMF-e1cF.css">
+    <script type="module" crossorigin src="/assets/index--tl-vX2x.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-llDTjpu6.css">
   </head>
   <body>
     <div id="root"></div>
