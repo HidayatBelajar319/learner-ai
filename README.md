@@ -172,7 +172,7 @@ npm run deploy
 
 | Dokumen                                    | Deskripsi                   |
 | ------------------------------------------ | --------------------------- |
-| [**Guide**](MoreInfo/Learner AI - Guide.md)| Panduan instal, run, deploy |
+| [**Guide**](/blob/main/MoreInfo/Learner%20AI%20-%20Guide.md)| Panduan instal, run, deploy |
 | [**Specification**](learner-specification) | Spesifikasi proyek lengkap  |
 | **Plan**                                   | Roadmap pengembangan        |
 | **Features**                               | Daftar fitur detail         |
