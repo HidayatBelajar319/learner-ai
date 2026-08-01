@@ -6,20 +6,20 @@
 
 ## 📋 Daftar Isi
 
-1. [Coding Style](#-coding-style)
-2. [Naming Convention](#-naming-convention)
-3. [UI Rules](#-ui-rules)
-4. [UX Rules](#-ux-rules)
-5. [Security Rules](#-security-rules)
-6. [Accessibility Rules](#-accessibility-rules)
-7. [Performance Rules](#-performance-rules)
-8. [AI Rules](#-ai-rules)
-9. [Documentation Rules](#-documentation-rules)
-10. [Git Rules](#-git-rules)
+1. [Coding Style](#coding-style)
+2. [Naming Convention](#naming-convention)
+3. [UI Rules](#ui-rules)
+4. [UX Rules](#ux-rules)
+5. [Security Rules](#security-rules)
+6. [Accessibility Rules](#accessibility-rules)
+7. [Performance Rules](#performance-rules)
+8. [AI Rules](#ai-rules)
+9. [Documentation Rules](#documentation-rules)
+10. [Git Rules](#git-rules)
 
 ---
 
-## 💻 Coding Style
+## 💻 Coding Style <a id="coding-style"></a>
 
 ### General
 
@@ -65,7 +65,7 @@ const user = {
 
 ---
 
-## 🏷️ Naming Convention
+## 🏷️ Naming Convention <a id="naming-convention"></a>
 
 ### Variables &amp; Functions
 
@@ -112,7 +112,7 @@ const user = {
 
 ---
 
-## 🎨 UI Rules
+## 🎨 UI Rules <a id="ui-rules"></a>
 
 ### Desain
 
@@ -155,7 +155,7 @@ const user = {
 
 ---
 
-## 👥 UX Rules
+## 👥 UX Rules <a id="ux-rules"></a>
 
 ### User-Centered
 
@@ -193,7 +193,7 @@ const user = {
 
 ---
 
-## 🔒 Security Rules
+## 🔒 Security Rules <a id="security-rules"></a>
 
 ### Input Validation
 
@@ -242,7 +242,7 @@ const user = {
 
 ---
 
-## ♿ Accessibility Rules
+## ♿ Accessibility Rules <a id="accessibility-rules"></a>
 
 ### WCAG Compliance
 
@@ -281,7 +281,7 @@ const user = {
 
 ---
 
-## ⚡ Performance Rules
+## ⚡ Performance Rules <a id="performance-rules"></a>
 
 ### Code Optimization
 
@@ -321,7 +321,7 @@ const user = {
 
 ---
 
-## 🤖 AI Rules
+## 🤖 AI Rules <a id="ai-rules"></a>
 
 ### Content Generation
 
@@ -355,7 +355,7 @@ const user = {
 
 ---
 
-## 📚 Documentation Rules
+## 📚 Documentation Rules <a id="documentation-rules"></a>
 
 ### Code Documentation
 
@@ -395,7 +395,7 @@ function calculateXP(userId: string, activityType: string): number {
 
 ---
 
-## 🪂 Git Rules
+## 🪂 Git Rules <a id="git-rules"></a>
 
 ### Branching
 

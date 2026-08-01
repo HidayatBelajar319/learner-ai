@@ -7,7 +7,7 @@ const indexHtml = `<!DOCTYPE html>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#6366f1" />
     <title>Learner AI</title>
-    <script type="module" crossorigin src="/assets/index-Cqgc-aOn.js"></script>
+    <script type="module" crossorigin src="/assets/index-Yfb9Ur4I.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-CWPt1lBy.css">
   </head>
   <body>

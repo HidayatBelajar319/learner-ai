@@ -6,18 +6,18 @@
 
 ## 📋 Kategori Fitur
 
-1. [Fitur AI](#-fitur-ai)
-2. [Fitur Pembelajaran](#-fitur-pembelajaran)
-3. [Fitur Konten](#-fitur-konten)
-4. [Fitur Evaluasi](#-fitur-evaluasi)
-5. [Fitur Gamifikasi](#-fitur-gamifikasi)
-6. [Fitur UI/UX](#-fitur-uix)
-7. [Fitur Keamanan](#-fitur-keamanan)
-8. [Fitur Teknis](#-fitur-teknis)
+1. [Fitur AI](#fitur-ai)
+2. [Fitur Pembelajaran](#fitur-pembelajaran)
+3. [Fitur Konten](#fitur-konten)
+4. [Fitur Evaluasi](#fitur-evaluasi)
+5. [Fitur Gamifikasi](#fitur-gamifikasi)
+6. [Fitur UI/UX](#fitur-uiux)
+7. [Fitur Keamanan](#fitur-keamanan)
+8. [Fitur Teknis](#fitur-teknis)
 
 ---
 
-## 🤖 Fitur AI
+## 🤖 Fitur AI <a id="fitur-ai"></a>
 
 ### Core AI
 
@@ -82,7 +82,7 @@
 
 ---
 
-## 📚 Fitur Pembelajaran
+## 📚 Fitur Pembelajaran <a id="fitur-pembelajaran"></a>
 
 ### Sistem Pembelajaran
 
@@ -127,7 +127,7 @@
 
 ---
 
-## 📖 Fitur Konten
+## 📖 Fitur Konten <a id="fitur-konten"></a>
 
 ### Jenis Konten
 
@@ -162,7 +162,7 @@
 
 ---
 
-## ✅ Fitur Evaluasi
+## ✅ Fitur Evaluasi <a id="fitur-evaluasi"></a>
 
 ### Jenis Evaluasi
 
@@ -221,7 +221,7 @@
 
 ---
 
-## 🎮 Fitur Gamifikasi
+## 🎮 Fitur Gamifikasi <a id="fitur-gamifikasi"></a>
 
 ### Sistem XP
 
@@ -309,7 +309,7 @@
 
 | Fitur        | Deskripsi                                | Status |
 | ------------ | ---------------------------------------- | ------ |
-| **Pencarian**| Cari pengguna berdasarkan nama/username  | ✅      |
+| **Pencarian**| Cari pengguna berdasarkan nama/username; tanpa kata kunci menampilkan semua akun aktif | ✅      |
 | **Pertemanan**| Kirim, terima, tolak, batalkan permintaan | ✅      |
 | **Chat**     | Chat real-time antar teman (polling)     | ✅      |
 | **Notifikasi**| Badge unread &amp; permintaan tertunda   | ✅      |
@@ -331,7 +331,7 @@
 
 ---
 
-## 🎨 Fitur UI/UX
+## 🎨 Fitur UI/UX <a id="fitur-uiux"></a>
 
 ### Desain Visual
 
@@ -388,7 +388,7 @@
 
 ---
 
-## 🔒 Fitur Keamanan
+## 🔒 Fitur Keamanan <a id="fitur-keamanan"></a>
 
 ### Perlindungan AI
 
@@ -439,7 +439,7 @@
 
 ---
 
-## ⚙️ Fitur Teknis
+## ⚙️ Fitur Teknis <a id="fitur-teknis"></a>
 
 ### Cloudflare Workers
 

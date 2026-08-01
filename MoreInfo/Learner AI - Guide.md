@@ -6,23 +6,23 @@
 
 ## 📋 Daftar Isi
 
-1. [Persyaratan](#-persyaratan)
-2. [Install Project](#-install-project)
-3. [Install Dependency](#-install-dependency)
-4. [Konfigurasi](#-konfigurasi)
-5. [Run Development](#-run-development)
-6. [Build Production](#-build-production)
-7. [Deploy ke Cloudflare](#-deploy-ke-cloudflare)
-8. [Update Project](#-update-project)
-9. [Maintenance](#-maintenance)
-10. [Struktur Folder](#-struktur-folder)
-11. [Ganti AI/Model/API](#-ganti-aimodelapi)
-12. [Troubleshooting](#-troubleshooting)
-13. [FAQ](#-faq)
+1. [Persyaratan](#persyaratan)
+2. [Install Project](#install-project)
+3. [Install Dependency](#install-dependency)
+4. [Konfigurasi](#konfigurasi)
+5. [Run Development](#run-development)
+6. [Build Production](#build-production)
+7. [Deploy ke Cloudflare](#deploy-ke-cloudflare)
+8. [Update Project](#update-project)
+9. [Maintenance](#maintenance)
+10. [Struktur Folder](#struktur-folder)
+11. [Ganti AI/Model/API](#ganti-aimodelapi)
+12. [Troubleshooting](#troubleshooting)
+13. [FAQ](#faq)
 
 ---
 
-## 💻 Persyaratan
+## 💻 Persyaratan <a id="persyaratan"></a>
 
 - **Node.js:** 18.x+ (rekomendasi: 20.x LTS)
 - **npm/yarn:** 9.x+
@@ -33,7 +33,7 @@
 
 ---
 
-## 📥 Install Project
+## 📥 Install Project <a id="install-project"></a>
 
 ```bash
 git clone https://github.com/hidayat3911/learner-ai.git
@@ -44,7 +44,7 @@ wrangler login
 
 ---
 
-## 🔧 Install Dependency
+## 🔧 Install Dependency <a id="install-dependency"></a>
 
 ```bash
 npm install
@@ -54,7 +54,7 @@ yarn install
 
 ---
 
-## ⚙️ Konfigurasi
+## ⚙️ Konfigurasi <a id="konfigurasi"></a>
 
 ### File Utama
 
@@ -86,7 +86,7 @@ CLOUDFLARE_ACCOUNT_ID=your_account_id
 
 ---
 
-## 🚀 Run Development
+## 🚀 Run Development <a id="run-development"></a>
 
 ```bash
 npm run dev
@@ -95,7 +95,7 @@ npm run dev
 
 ---
 
-## 🏗️ Build Production
+## 🏗️ Build Production <a id="build-production"></a>
 
 ```bash
 npm run build
@@ -104,7 +104,7 @@ npm run build
 
 ---
 
-## ☁️ Deploy ke Cloudflare
+## ☁️ Deploy ke Cloudflare <a id="deploy-ke-cloudflare"></a>
 
 ```bash
 # Deploy production
@@ -119,7 +119,7 @@ wrangler tail
 
 ---
 
-## 🔄 Update Project
+## 🔄 Update Project <a id="update-project"></a>
 
 ```bash
 git pull origin main
@@ -130,7 +130,7 @@ npm run deploy
 
 ---
 
-## 🧹 Maintenance
+## 🧹 Maintenance <a id="maintenance"></a>
 
 ```bash
 # Clean
@@ -146,7 +146,7 @@ wrangler kv bulk get --binding LEARNER_KV > kv_backup.json
 
 ---
 
-## 🗂️ Struktur Folder
+## 🗂️ Struktur Folder <a id="struktur-folder"></a>
 
 ```
 learner-ai/
@@ -167,7 +167,7 @@ learner-ai/
 
 ---
 
-## 🤖 Ganti AI/Model/API
+## 🤖 Ganti AI/Model/API <a id="ganti-aimodelapi"></a>
 
 ### Ganti AI Provider
 Edit `src/lib/ai/config.ts`:
@@ -194,7 +194,7 @@ export const DEFAULT_MODEL = 'mistral-small-latest';
 
 ---
 
-## ❓ Troubleshooting
+## ❓ Troubleshooting <a id="troubleshooting"></a>
 
 ### Error Umum
 
@@ -241,7 +241,7 @@ npm run build  # Lihat error detail
 
 ---
 
-## ❔ FAQ
+## ❔ FAQ <a id="faq"></a>
 
 **Q: Bagaimana cara dapat API Key?**
 - Mistral: https://mistral.ai

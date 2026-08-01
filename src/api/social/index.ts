@@ -107,17 +107,29 @@ social.get('/search', async (c) => {
   if (!payload) return errorResponse('Unauthorized', 401);
 
   const q = String(c.req.query('q') || '').trim();
-  if (!q) return successResponse('Hasil pencarian', []);
+  const limit = Math.min(Math.max(Number(c.req.query('limit')) || 50, 1), 100);
 
-  const like = `%${q}%`;
-  const rows = await c.env.LEARNER_DB
-    .prepare(
-      `SELECT id, username, full_name, profile FROM users
-       WHERE id != ? AND is_active = 1 AND (username LIKE ? OR full_name LIKE ? OR email LIKE ?)
-       ORDER BY full_name ASC LIMIT 10`,
-    )
-    .bind(payload.sub, like, like, like)
-    .all<{ id: string; username: string; full_name: string; profile: string }>();
+  let rows: any;
+  if (q) {
+    const like = `%${q}%`;
+    rows = await c.env.LEARNER_DB
+      .prepare(
+        `SELECT id, username, full_name, profile FROM users
+         WHERE id != ? AND is_active = 1 AND (username LIKE ? OR full_name LIKE ? OR email LIKE ?)
+         ORDER BY full_name ASC LIMIT ${limit}`,
+      )
+      .bind(payload.sub, like, like, like)
+      .all<{ id: string; username: string; full_name: string; profile: string }>();
+  } else {
+    rows = await c.env.LEARNER_DB
+      .prepare(
+        `SELECT id, username, full_name, profile FROM users
+         WHERE id != ? AND is_active = 1
+         ORDER BY full_name ASC LIMIT ${limit}`,
+      )
+      .bind(payload.sub)
+      .all<{ id: string; username: string; full_name: string; profile: string }>();
+  }
 
   const results: Array<PublicUser & { status: string }> = [];
   for (const r of rows.results) {

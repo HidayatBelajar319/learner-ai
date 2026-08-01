@@ -6,18 +6,18 @@
 
 ## 📋 Daftar Isi
 
-1. [Ringkasan Proyek](#-ringkasan-proyek)
-2. [Fase Pengembangan](#-fase-pengembangan)
-3. [Milestone Utama](#-milestone-utama)
-4. [Prioritas Fitur](#-prioritas-fitur)
-5. [Timeline](#-timeline)
-6. [Sumber Daya](#-sumber-daya)
-7. [Risiko &amp; Mitigasi](#-risiko--mitigasi)
-8. [Catatan Tambahan](#-catatan-tambahan)
+1. [Ringkasan Proyek](#ringkasan-proyek)
+2. [Fase Pengembangan](#fase-pengembangan)
+3. [Milestone Utama](#milestone-utama)
+4. [Prioritas Fitur](#prioritas-fitur)
+5. [Timeline](#timeline)
+6. [Sumber Daya](#sumber-daya)
+7. [Risiko &amp; Mitigasi](#risiko-mitigasi)
+8. [Catatan Tambahan](#catatan-tambahan)
 
 ---
 
-## 📌 Ringkasan Proyek
+## 📌 Ringkasan Proyek <a id="ringkasan-proyek"></a>
 
 - **Nama:** Learner AI
 - **Developer:** HidayatBelajar319 ([hidayat3911@sd.belajar.id](mailto:hidayat3911@sd.belajar.id))
@@ -27,7 +27,7 @@
 
 ---
 
-## 🎯 Fase Pengembangan
+## 🎯 Fase Pengembangan <a id="fase-pengembangan"></a>
 
 ### Fase 0: Perencanaan &amp; Setup (Selesai ⬜)
 
@@ -98,7 +98,7 @@
 
 ---
 
-## 🎖️ Milestone Utama
+## 🎖️ Milestone Utama <a id="milestone-utama"></a>
 
 ### Milestone 1: MVP (Minimum Viable Product)
 
@@ -172,7 +172,7 @@
 
 ---
 
-## 📊 Prioritas Fitur
+## 📊 Prioritas Fitur <a id="prioritas-fitur"></a>
 
 ### Prioritas Tinggi (Must Have)
 
@@ -215,7 +215,7 @@
 
 ---
 
-## 📅 Timeline
+## 📅 Timeline <a id="timeline"></a>
 
 
 | Periode            | Fase   | Target Pencapaian       |
@@ -234,7 +234,7 @@
 
 ---
 
-## 💰 Sumber Daya
+## 💰 Sumber Daya <a id="sumber-daya"></a>
 
 ### Biaya
 
@@ -258,7 +258,7 @@
 
 ---
 
-## ⚠️ Risiko &amp; Mitigasi
+## ⚠️ Risiko &amp; Mitigasi <a id="risiko-mitigasi"></a>
 
 ### Risiko Teknis
 
@@ -283,7 +283,7 @@
 
 ---
 
-## 📝 Catatan Tambahan
+## 📝 Catatan Tambahan <a id="catatan-tambahan"></a>
 
 ### Catatan Developer
 

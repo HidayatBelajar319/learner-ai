@@ -2,6 +2,15 @@
 
 *Tempat dimana Changelog berada.*
 
+## [0.4.1] - 1 Agustus 2026
+
+### Ditambahkan / Diperbarui
+- **Cari Teman kini menampilkan semua akun** secara default (tanpa kata kunci), sehingga user bisa langsung memilih teman; pencarian tetap tersedia bila jumlah pengguna sudah banyak.
+  - `GET /api/social/search` tanpa parameter `q` mengembalikan seluruh user aktif (`is_active = 1`, kecuali user sendiri) diurutkan nama, dengan param `limit` (default 50, maks 100).
+  - Tab "Cari Teman" langsung memuat daftar akun saat dibuka; empty state menampilkan "Belum ada pengguna lain…" bila memang kosong.
+- **Deployed:** worker versi `8e0c2c4a-eb55-4572-a35a-c433a5924bb1`.
+- **Docs:** semua tautan internal di `MoreInfo/*.md` dan `README.md` kini valid (anchor eksplisit `<a id="…">` pada heading agar link TOC berfungsi di GitHub & editor, menggantikan anchor `#-…` yang tidak konsisten antar renderer).
+
 ## [0.4.0] - 31 Juli 2026
 
 ### Ditambahkan

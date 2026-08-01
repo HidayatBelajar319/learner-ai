@@ -132,6 +132,11 @@ export default function Social() {
   }, [chatFriend?.id, token]);
 
   useEffect(() => {
+    if (tab === 'search') doSearch(searchQ);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
@@ -221,13 +226,13 @@ export default function Social() {
 
   const doSearch = async (q?: string) => {
     const query = (q ?? searchQ).trim();
-    if (!token || !query) {
-      setSearchResults([]);
-      return;
-    }
+    if (!token) return;
     setSearching(true);
     try {
-      const res = await api.get<{ success: boolean; data: Array<PublicUser & { status: string }> }>(`/social/search?q=${encodeURIComponent(query)}`, token);
+      const url = query
+        ? `/social/search?q=${encodeURIComponent(query)}`
+        : '/social/search';
+      const res = await api.get<{ success: boolean; data: Array<PublicUser & { status: string }> }>(url, token);
       if (res.success) setSearchResults(res.data);
     } catch (e: any) {
       setError(e?.message || 'Gagal mencari');
@@ -364,6 +369,9 @@ export default function Social() {
           <div className="grid gap-3 md:grid-cols-2">
             {searchResults.length === 0 && searchQ.trim() && !searching && (
               <p className="text-sm text-gray-400 dark:text-gray-500 md:col-span-2">Tidak ada pengguna ditemukan.</p>
+            )}
+            {searchResults.length === 0 && !searchQ.trim() && !searching && (
+              <p className="text-sm text-gray-400 dark:text-gray-500 md:col-span-2">Belum ada pengguna lain. Bagikan aplikasi ke temanmu!</p>
             )}
             {searchResults.map((r) => (
               <div key={r.id} className="card rounded-xl p-4">

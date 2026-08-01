@@ -6,19 +6,19 @@
 
 ## 📋 Daftar Isi
 
-1. [Ringkasan Arsitektur](#-ringkasan-arsitektur)
-2. [Arsitektur Frontend](#-arsitektur-frontend)
-3. [Arsitektur Backend](#-arsitektur-backend)
-4. [Arsitektur AI](#-arsitektur-ai)
-5. [Arsitektur Database](#-arsitektur-database)
-6. [Arsitektur Storage](#-arsitektur-storage)
-7. [Alur Data](#-alur-data)
-8. [Diagram Arsitektur](#-diagram-arsitektur)
-9. [Integrasi Sistem](#-integrasi-sistem)
+1. [Ringkasan Arsitektur](#ringkasan-arsitektur)
+2. [Arsitektur Frontend](#arsitektur-frontend)
+3. [Arsitektur Backend](#arsitektur-backend)
+4. [Arsitektur AI](#arsitektur-ai)
+5. [Arsitektur Database](#arsitektur-database)
+6. [Arsitektur Storage](#arsitektur-storage)
+7. [Alur Data](#alur-data)
+8. [Diagram Arsitektur](#diagram-arsitektur)
+9. [Integrasi Sistem](#integrasi-sistem)
 
 ---
 
-## 🏗️ Ringkasan Arsitektur
+## 🏗️ Ringkasan Arsitektur <a id="ringkasan-arsitektur"></a>
 
 Learner AI menggunakan arsitektur **modern, scalable, dan serverless** berbasis Cloudflare Workers dengan integrasi AI yang kuat.
 
@@ -45,7 +45,7 @@ Learner AI menggunakan arsitektur **modern, scalable, dan serverless** berbasis 
 
 ---
 
-## 🖥️ Arsitektur Frontend
+## 🖥️ Arsitektur Frontend <a id="arsitektur-frontend"></a>
 
 ### Struktur
 
@@ -101,7 +101,7 @@ src/
 
 ---
 
-## 🖥️ Arsitektur Backend
+## 🖥️ Arsitektur Backend <a id="arsitektur-backend"></a>
 
 ### Cloudflare Workers
 
@@ -179,7 +179,7 @@ sequenceDiagram
 
 ---
 
-## 🤖 Arsitektur AI
+## 🤖 Arsitektur AI <a id="arsitektur-ai"></a>
 
 ### Sistem AI
 
@@ -250,7 +250,7 @@ graph TD
 
 ---
 
-## 🗃️ Arsitektur Database
+## 🗃️ Arsitektur Database <a id="arsitektur-database"></a>
 
 ### Cloudflare D1 (SQLite)
 
@@ -405,7 +405,7 @@ CREATE INDEX idx_user_progress_content ON user_progress(content_id);
 
 ---
 
-## 💾 Arsitektur Storage
+## 💾 Arsitektur Storage <a id="arsitektur-storage"></a>
 
 ### Cloudflare R2 (Object Storage)
 
@@ -464,7 +464,7 @@ learner-storage/
 
 ---
 
-## 🔄 Alur Data
+## 🔄 Alur Data <a id="alur-data"></a>
 
 ### Alur Utama
 
@@ -546,7 +546,7 @@ flowchart TD
 
 ---
 
-## 🔗 Diagram Arsitektur
+## 🔗 Diagram Arsitektur <a id="diagram-arsitektur"></a>
 
 ### Arsitektur Keseluruhan
 
@@ -615,7 +615,7 @@ graph TD
 
 ---
 
-## 🔗 Integrasi Sistem
+## 🔗 Integrasi Sistem <a id="integrasi-sistem"></a>
 
 ### Integrasi Frontend-Backend
 
