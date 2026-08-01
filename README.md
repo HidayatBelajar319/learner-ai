@@ -172,13 +172,12 @@ npm run deploy
 
 | Dokumen                                    | Deskripsi                   |
 | ------------------------------------------ | --------------------------- |
-| [**Guide**](/blob/main/MoreInfo/Learner%20AI%20-%20Guide.md)| Panduan instal, run, deploy |
-| [**Specification**](learner-specification) | Spesifikasi proyek lengkap  |
-| **Plan**                                   | Roadmap pengembangan        |
-| **Features**                               | Daftar fitur detail         |
-| **Architecture**                           | Arsitektur sistem           |
-| **Rules**                                  | Aturan pengembangan         |
-| **Changelog**                              | Riwayat perubahan           |
+| [**Guide**](MoreInfo/Learner%20AI%20-%20Guide.md)| Panduan instal, run, deploy |
+| [**Plan**](MoreInfo/Learner%20AI%20-%20Plan.md)| Roadmap pengembangan        |
+| [**Features**](MoreInfo/Learner%20AI%20-%20Features.md)| Daftar fitur detail         |
+| [**Architecture**](MoreInfo/Learner%20AI%20-%20Architecture.md)| Arsitektur sistem           |
+| [**Rules**](MoreInfo/Learner%20AI%20-%20Rules.md)| Aturan pengembangan         |
+| [**Changelog**](MoreInfo/Learner%20AI%20-%20Changelog.md)| Riwayat perubahan           |
 
 
 ---
