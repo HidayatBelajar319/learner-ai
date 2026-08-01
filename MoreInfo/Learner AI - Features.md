@@ -139,7 +139,7 @@
 | **Quiz**                | Ujian singkat untuk evaluasi        | ⬜      |
 | **Ujian**               | Evaluasi komprehensif               | ⬜      |
 | **Proyek**              | Tugas praktis                       | ⬜      |
-| **Flashcard**           | Kartu belajar untuk menghafal       | ⬜      |
+| **Flashcard**           | Kartu belajar untuk menghafal       | ✅      |
 | **Mind Map**            | Peta pikiran untuk visualisasi      | ⬜      |
 | **Diagram**             | Diagram untuk penjelasan visual     | ⬜      |
 | **Playground Coding**   | Lingkungan untuk mencoba kode       | ⬜      |
@@ -383,7 +383,7 @@
 | **Progress Bar**   | Indikator kemajuan   | ⬜      |
 | **Code Editor**    | Editor untuk coding  | ⬜      |
 | **Diagram Viewer** | Viewer untuk diagram | ⬜      |
-| **Flashcard**      | Kartu belajar        | ⬜      |
+| **Flashcard**      | Kartu belajar        | ✅      |
 
 
 ---

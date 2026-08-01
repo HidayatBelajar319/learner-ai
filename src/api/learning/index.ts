@@ -271,48 +271,118 @@ learning.get('/stats', async (c) => {
 
 /**
  * GET /api/learning/flashcards/decks
- * Mendapatkan daftar deck flashcard user
+ * Mendapatkan daftar deck flashcard user (jumlah kartu dihitung langsung dari database)
+ * Query: q (cari judul/deskripsi), subject (filter kategori)
  */
 learning.get('/flashcards/decks', async (c) => {
   const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
   if (!payload) return errorResponse('Unauthorized', 401);
 
-  const decks = await c.env.LEARNER_DB
-    .prepare('SELECT * FROM flashcard_decks WHERE user_id = ? ORDER BY updated_at DESC')
-    .bind(payload.sub)
-    .all();
+  const q = (c.req.query('q') ?? '').trim();
+  const subject = (c.req.query('subject') ?? '').trim();
 
+  let sql = `SELECT d.*, (SELECT COUNT(*) FROM flashcards f WHERE f.deck_id = d.id OR (f.deck_id IS NULL AND f.subject = d.subject)) AS card_count FROM flashcard_decks d WHERE d.user_id = ?`;
+  const params: string[] = [payload.sub];
+
+  if (subject) {
+    sql += ' AND d.subject = ?';
+    params.push(subject);
+  }
+  if (q) {
+    sql += ' AND (d.title LIKE ? OR d.description LIKE ?)';
+    const like = `%${q}%`;
+    params.push(like, like);
+  }
+  sql += ' ORDER BY d.updated_at DESC';
+
+  const decks = await c.env.LEARNER_DB.prepare(sql).bind(...params).all();
   return successResponse('Daftar deck flashcard', decks.results);
 });
 
 /**
  * POST /api/learning/flashcards/decks
- * Buat deck flashcard baru
+ * Buat deck flashcard baru (icon/logo opsional)
  */
 learning.post('/flashcards/decks', async (c) => {
   const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
   if (!payload) return errorResponse('Unauthorized', 401);
 
-  let body: { title: string; subject: string; description?: string };
+  let body: { title: string; subject: string; description?: string; icon?: string };
   try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
 
-  const { title, subject, description } = body;
+  const { title, subject, description, icon } = body;
   if (!title || !subject) return errorResponse('title dan subject wajib diisi', 400);
 
   const deckId = generateId();
   const createdAt = now();
 
   await c.env.LEARNER_DB
-    .prepare('INSERT INTO flashcard_decks (id, user_id, title, subject, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(deckId, payload.sub, title, subject, description ?? '', createdAt, createdAt)
+    .prepare('INSERT INTO flashcard_decks (id, user_id, title, subject, description, icon, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(deckId, payload.sub, title, subject, description ?? '', icon ?? '🃏', createdAt, createdAt)
     .run();
 
-  return successResponse('Deck flashcard dibuat', { id: deckId, title, subject });
+  return successResponse('Deck flashcard dibuat', { id: deckId, title, subject, icon: icon ?? '🃏' });
+});
+
+/**
+ * DELETE /api/learning/flashcards/decks/:deckId
+ * Hapus deck flashcard beserta seluruh kartunya
+ */
+learning.delete('/flashcards/decks/:deckId', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const deck = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM flashcard_decks WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('deckId'), payload.sub)
+    .first<any>();
+
+  if (!deck) return errorResponse('Deck tidak ditemukan', 404);
+
+  const cardRes = await c.env.LEARNER_DB
+    .prepare('DELETE FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))')
+    .bind(payload.sub, deck.id, deck.subject)
+    .run();
+
+  await c.env.LEARNER_DB
+    .prepare('DELETE FROM flashcard_decks WHERE id = ? AND user_id = ?')
+    .bind(deck.id, payload.sub)
+    .run();
+
+  return successResponse('Deck dan kartunya dihapus', { deleted_cards: cardRes.meta.changes ?? 0 });
+});
+
+/**
+ * GET /api/learning/flashcards/decks/:deckId/export
+ * Ekspor kartu deck ke JSON
+ */
+learning.get('/flashcards/decks/:deckId/export', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const deck = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM flashcard_decks WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('deckId'), payload.sub)
+    .first<any>();
+
+  if (!deck) return errorResponse('Deck tidak ditemukan', 404);
+
+  const cards = await c.env.LEARNER_DB
+    .prepare('SELECT id, front, back, topic, tags, difficulty, is_favorite, created_at FROM flashcards WHERE deck_id = ? OR (deck_id IS NULL AND subject = ?) ORDER BY created_at ASC')
+    .bind(deck.id, deck.subject)
+    .all();
+
+  return successResponse('Export flashcard', {
+    deck: { title: deck.title, subject: deck.subject, description: deck.description, icon: deck.icon },
+    cards: cards.results,
+    exported_at: now(),
+  });
 });
 
 /**
  * GET /api/learning/flashcards/decks/:deckId
  * Mendapatkan kartu dalam deck
+ * Query: q (cari front/back/topic/tags), favorite=1 (hanya favorit)
  */
 learning.get('/flashcards/decks/:deckId', async (c) => {
   const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
@@ -325,34 +395,66 @@ learning.get('/flashcards/decks/:deckId', async (c) => {
 
   if (!deck) return errorResponse('Deck tidak ditemukan', 404);
 
-  const cards = await c.env.LEARNER_DB
-    .prepare('SELECT * FROM flashcards WHERE user_id = ? AND subject = ? ORDER BY created_at ASC')
-    .bind(payload.sub, deck.subject)
-    .all();
+  const q = (c.req.query('q') ?? '').trim();
+  const favorite = c.req.query('favorite');
 
-  return successResponse('Kartu flashcard', { deck, cards: cards.results });
+  let sql = 'SELECT * FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))';
+  const params: unknown[] = [payload.sub, deck.id, deck.subject];
+
+  if (favorite === '1') {
+    sql += ' AND is_favorite = 1';
+  }
+  if (q) {
+    sql += ' AND (front LIKE ? OR back LIKE ? OR topic LIKE ? OR tags LIKE ?)';
+    const like = `%${q}%`;
+    params.push(like, like, like, like);
+  }
+  sql += ' ORDER BY created_at ASC';
+
+  const cards = await c.env.LEARNER_DB.prepare(sql).bind(...params).all();
+
+  const countRes = await c.env.LEARNER_DB
+    .prepare('SELECT COUNT(*) as count FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))')
+    .bind(payload.sub, deck.id, deck.subject)
+    .first<{ count: number }>();
+
+  return successResponse('Kartu flashcard', {
+    deck: { ...deck, card_count: countRes?.count ?? 0 },
+    cards: cards.results,
+  });
 });
 
 /**
  * POST /api/learning/flashcards
- * Tambah kartu flashcard baru
+ * Tambah kartu flashcard baru (terhubung ke deck)
  */
 learning.post('/flashcards', async (c) => {
   const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
   if (!payload) return errorResponse('Unauthorized', 401);
 
-  let body: { front: string; back: string; subject: string; topic: string; tags?: string; difficulty?: number };
+  let body: { front: string; back: string; topic: string; tags?: string; difficulty?: number; deck_id?: string; subject?: string };
   try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
 
-  const { front, back, subject, topic, tags, difficulty } = body;
-  if (!front || !back || !subject || !topic) return errorResponse('front, back, subject, topic wajib diisi', 400);
+  const { front, back, topic, tags, difficulty, deck_id } = body;
+  if (!front || !back || !topic) return errorResponse('front, back, topic wajib diisi', 400);
+
+  let subject = body.subject;
+  if (deck_id) {
+    const deck = await c.env.LEARNER_DB
+      .prepare('SELECT * FROM flashcard_decks WHERE id = ? AND user_id = ?')
+      .bind(deck_id, payload.sub)
+      .first<any>();
+    if (!deck) return errorResponse('Deck tidak ditemukan', 404);
+    subject = deck.subject;
+  }
+  if (!subject) return errorResponse('subject atau deck_id wajib diisi', 400);
 
   const cardId = generateId();
   const createdAt = now();
 
   await c.env.LEARNER_DB
-    .prepare('INSERT INTO flashcards (id, user_id, subject, topic, front, back, tags, difficulty, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(cardId, payload.sub, subject, topic, front, back, tags ?? '', difficulty ?? 1, createdAt, createdAt)
+    .prepare('INSERT INTO flashcards (id, user_id, deck_id, subject, topic, front, back, tags, difficulty, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(cardId, payload.sub, deck_id ?? null, subject, topic, front, back, tags ?? '', difficulty ?? 1, createdAt, createdAt)
     .run();
 
   const cardCount = await c.env.LEARNER_DB
@@ -365,6 +467,49 @@ learning.post('/flashcards', async (c) => {
   }
 
   return successResponse('Kartu flashcard ditambahkan', { id: cardId });
+});
+
+/**
+ * PUT /api/learning/flashcards/:id
+ * Edit kartu flashcard (front, back, topic, tags, difficulty, is_favorite)
+ */
+learning.put('/flashcards/:id', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { front?: string; back?: string; topic?: string; tags?: string; difficulty?: number; is_favorite?: number | boolean };
+  try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
+
+  const existing = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM flashcards WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), payload.sub)
+    .first<any>();
+
+  if (!existing) return errorResponse('Kartu tidak ditemukan', 404);
+
+  const front = body.front ?? existing.front;
+  const back = body.back ?? existing.back;
+  const topic = body.topic ?? existing.topic;
+  const tags = body.tags ?? existing.tags;
+  const difficulty = body.difficulty ?? existing.difficulty;
+  const is_favorite = body.is_favorite !== undefined ? (body.is_favorite ? 1 : 0) : existing.is_favorite;
+  const updatedAt = now();
+
+  await c.env.LEARNER_DB
+    .prepare('UPDATE flashcards SET front = ?, back = ?, topic = ?, tags = ?, difficulty = ?, is_favorite = ?, updated_at = ? WHERE id = ? AND user_id = ?')
+    .bind(front, back, topic, tags, difficulty, is_favorite, updatedAt, existing.id, payload.sub)
+    .run();
+
+  return successResponse('Kartu flashcard diperbarui', {
+    id: existing.id,
+    front,
+    back,
+    topic,
+    tags,
+    difficulty,
+    is_favorite,
+    updated_at: updatedAt,
+  });
 });
 
 /**
@@ -381,6 +526,86 @@ learning.delete('/flashcards/:id', async (c) => {
     .run();
 
   return successResponse('Kartu dihapus');
+});
+
+/**
+ * POST /api/learning/flashcards/:id/duplicate
+ * Duplikasi kartu flashcard
+ */
+learning.post('/flashcards/:id/duplicate', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const existing = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM flashcards WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), payload.sub)
+    .first<any>();
+
+  if (!existing) return errorResponse('Kartu tidak ditemukan', 404);
+
+  const newId = generateId();
+  const createdAt = now();
+
+  await c.env.LEARNER_DB
+    .prepare('INSERT INTO flashcards (id, user_id, deck_id, subject, topic, front, back, tags, difficulty, is_favorite, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)')
+    .bind(newId, payload.sub, existing.deck_id, existing.subject, existing.topic, existing.front, existing.back, existing.tags ?? '', existing.difficulty, createdAt, createdAt)
+    .run();
+
+  return successResponse('Kartu diduplikasi', { id: newId });
+});
+
+/**
+ * POST /api/learning/flashcards/import
+ * Impor kartu dari JSON ke sebuah deck
+ * Body: { deck_id, cards: [{ front, back, topic?, tags?, difficulty? }] }
+ */
+learning.post('/flashcards/import', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { deck_id: string; cards: Array<{ front?: string; back?: string; topic?: string; tags?: string; difficulty?: number }> };
+  try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
+
+  const { deck_id, cards } = body;
+  if (!deck_id || !Array.isArray(cards) || cards.length === 0) {
+    return errorResponse('deck_id dan cards (array) wajib diisi', 400);
+  }
+
+  const deck = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM flashcard_decks WHERE id = ? AND user_id = ?')
+    .bind(deck_id, payload.sub)
+    .first<any>();
+
+  if (!deck) return errorResponse('Deck tidak ditemukan', 404);
+
+  const MAX_CARDS = 500;
+  if (cards.length > MAX_CARDS) return errorResponse(`Maksimal ${MAX_CARDS} kartu per impor`, 400);
+
+  const createdAt = now();
+  let inserted = 0;
+
+  for (const card of cards) {
+    const front = String(card.front ?? '').trim();
+    const back = String(card.back ?? '').trim();
+    if (!front || !back) continue;
+
+    await c.env.LEARNER_DB
+      .prepare('INSERT INTO flashcards (id, user_id, deck_id, subject, topic, front, back, tags, difficulty, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(generateId(), payload.sub, deck.id, deck.subject, String(card.topic ?? '').trim(), front, back, String(card.tags ?? '').trim(), card.difficulty ?? 1, createdAt, createdAt)
+      .run();
+    inserted++;
+  }
+
+  const cardCount = await c.env.LEARNER_DB
+    .prepare('SELECT COUNT(*) as count FROM flashcards WHERE user_id = ?')
+    .bind(payload.sub)
+    .first<{ count: number }>();
+
+  if ((cardCount?.count ?? 0) >= 10) {
+    await awardAchievement(c.env.LEARNER_DB, payload.sub, 'flashcard_10');
+  }
+
+  return successResponse(`Berhasil mengimpor ${inserted} kartu`, { inserted });
 });
 
 /**

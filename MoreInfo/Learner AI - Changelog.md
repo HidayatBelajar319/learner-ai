@@ -2,6 +2,18 @@
 
 *Tempat dimana Changelog berada.*
 
+## [0.5.0] - 1 Agustus 2026
+
+### Ditambahkan / Diperbarui
+- **Flashcards dirombak total** (major upgrade, fix bug + fitur lengkap):
+  - **Perbaikan bug jumlah kartu:** `card_count` di `flashcard_decks` kini dihitung langsung dari database (subquery), bukan nilai tersimpan yang basi; kartu lama (tanpa `deck_id`) tetap terhitung lewat fallback `subject`.
+  - **Struktur data baru:** kartu flashcard punya `deck_id` (terhubung resmi ke deck), `is_favorite` (tandai favorit), dan deck punya `icon` (emoji/logo).
+  - **Migration `0011_flashcard_upgrade.sql`:** tambah kolom `deck_id`, `is_favorite`, `icon`, index `idx_flashcards_deck`, backfill data lama (diterapkan ke D1 remote).
+  - **Endpoint baru/diperbarui di `/api/learning/flashcards`:** GET decks (cari `q` + filter `subject`), POST decks (dengan icon), DELETE decks (hapus deck + kartunya), GET detail deck (filter `q`, `favorite=1`), GET export (JSON), POST kartu (wajib `deck_id`), PUT kartu (edit semua field + favorit, mengembalikan data), POST duplicate, POST import (maks 500 kartu).
+  - **UI baru (`/flashcards`):** daftar deck dengan ikon & jumlah kartu real, pencarian & filter kategori deck, mode Belajar (flip kartu, prev/next, tanda favorit) & mode Semua Kartu (search, filter favorit, edit/duplikat/hapus), import/export JSON (upload file atau tempel), pilih ikon saat buat deck, hapus deck.
+- **Deployed:** worker versi `2f2c0fca-e2bc-4142-abd9-ea46a2e57cd8`.
+- API diuji end-to-end: create/read/update/delete kartu, favorite filter, duplicate, import, export, create + delete deck (data uji dibersihkan, deck "Aljabar Dasar" tetap 3 kartu).
+
 ## [0.4.1] - 1 Agustus 2026
 
 ### Ditambahkan / Diperbarui
