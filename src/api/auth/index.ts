@@ -627,6 +627,38 @@ auth.post('/profile', async (c) => {
   return successResponse('Profil berhasil diupdate', { profile });
 });
 
+/**
+ * POST /api/auth/role
+ * Ubah peran akun sendiri antara Siswa (student) dan Guru (teacher).
+ * Body: { role: 'student' | 'teacher' }
+ * Guru dan Siswa memiliki kemampuan fitur yang sama; peran hanya menandai status.
+ */
+auth.post('/role', async (c) => {
+  const payload = await requireAuthWorker(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { role?: string };
+  try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
+
+  const role = body.role === 'teacher' ? 'teacher' : body.role === 'student' ? 'student' : null;
+  if (!role) return errorResponse('Role harus student atau teacher', 400);
+
+  const user = await c.env.LEARNER_DB
+    .prepare('SELECT role FROM users WHERE id = ?')
+    .bind(payload.sub)
+    .first<{ role: string }>();
+
+  if (!user) return errorResponse('User tidak ditemukan', 404);
+  if (user.role === 'admin') return errorResponse('Role admin tidak bisa diubah', 400);
+
+  await c.env.LEARNER_DB
+    .prepare('UPDATE users SET role = ?, updated_at = ? WHERE id = ?')
+    .bind(role, now(), payload.sub)
+    .run();
+
+  return successResponse(role === 'teacher' ? 'Akun diubah menjadi Guru' : 'Akun diubah menjadi Siswa', { role });
+});
+
 async function requireAuthWorker(request: Request, jwtSecret: string) {
   const token = extractToken(request);
   if (!token) return null;

@@ -66,6 +66,36 @@ admin.get('/users', async (c) => {
 });
 
 /**
+ * POST /api/admin/users/:id/role
+ * Ubah peran user (student | teacher | premium).
+ */
+admin.post('/users/:id/role', async (c) => {
+  const payload = await requireAdmin(c.req.raw, c.env);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const id = c.req.param('id');
+  let body: { role?: string };
+  try { body = await c.req.json(); } catch { body = {}; }
+
+  const role = body.role === 'student' || body.role === 'teacher' || body.role === 'premium' ? body.role : null;
+  if (!role) return errorResponse('Role harus student, teacher, atau premium', 400);
+
+  const user = await c.env.LEARNER_DB
+    .prepare('SELECT role FROM users WHERE id = ?')
+    .bind(id)
+    .first<{ role: string }>();
+  if (!user) return errorResponse('User tidak ditemukan', 404);
+  if (user.role === 'admin') return errorResponse('Role admin tidak bisa diubah', 400);
+
+  await c.env.LEARNER_DB
+    .prepare('UPDATE users SET role = ?, updated_at = ? WHERE id = ?')
+    .bind(role, new Date().toISOString(), id)
+    .run();
+
+  return successResponse('Role user diperbarui', { role });
+});
+
+/**
  * POST /api/admin/users/:id/toggle
  * Aktif/nonaktifkan user dengan alasan
  */

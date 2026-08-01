@@ -1,4 +1,4 @@
-export type ProviderName = 'openrouter' | 'openai' | 'mistral' | 'anthropic' | 'google' | 'omniroute' | 'workersai';
+export type ProviderName = 'openrouter' | 'openai' | 'mistral' | 'anthropic' | 'google' | 'omniroute' | 'workersai' | 'groq' | 'deepseek';
 
 export interface ProviderConfig {
   name: ProviderName;
@@ -59,6 +59,22 @@ export const PROVIDERS: ProviderConfig[] = [
     models: ['auto'],
     requiresKey: false,
     customBaseUrl: true,
+  },
+  {
+    name: 'groq',
+    label: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    models: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'qwen-2.5-32b'],
+    requiresKey: true,
+  },
+  {
+    name: 'deepseek',
+    label: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    requiresKey: true,
   },
   {
     name: 'workersai',
@@ -456,7 +472,7 @@ export async function chat(provider: ProviderName, apiKey: string, req: ChatRequ
     return googleChat(baseUrl, apiKey, { ...req, model });
   }
 
-  if (provider === 'openrouter' || provider === 'openai' || provider === 'mistral' || provider === 'omniroute') {
+  if (provider === 'openrouter' || provider === 'openai' || provider === 'mistral' || provider === 'omniroute' || provider === 'groq' || provider === 'deepseek') {
     return openaiChat(baseUrl, apiKey, { ...req, model });
   }
 

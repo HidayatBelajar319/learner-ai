@@ -1,6 +1,6 @@
 # Learner AI - Features
 
-**Versi:** 1.0.0 | **Tanggal:** 26 Juli 2026 | **Developer:** HidayatBelajar319
+**Versi:** 1.0.0 | **Tanggal:** 01 Agustus 2026 | **Developer:** HidayatBelajar319
 
 ---
 
@@ -11,9 +11,10 @@
 3. [Fitur Konten](#fitur-konten)
 4. [Fitur Evaluasi](#fitur-evaluasi)
 5. [Fitur Gamifikasi](#fitur-gamifikasi)
-6. [Fitur UI/UX](#fitur-uiux)
-7. [Fitur Keamanan](#fitur-keamanan)
-8. [Fitur Teknis](#fitur-teknis)
+6. [Creatives](#creatives)
+7. [Fitur UI/UX](#fitur-uiux)
+8. [Fitur Keamanan](#fitur-keamanan)
+9. [Fitur Teknis](#fitur-teknis)
 
 ---
 
@@ -218,6 +219,60 @@
 | **Analisis Perbandingan** | Perbandingan dengan pengguna lain | ⬜      |
 | **Rekomendasi**           | Saran untuk perbaikan             | ⬜      |
 
+
+---
+
+## 🎨 Creatives <a id="creatives"></a>
+
+> **Creatives** adalah editor visual yang memiliki konsep serupa Canva, namun merupakan implementasi orisinal LearnerAI dengan kemampuan AI dan integrasi penuh ke seluruh fitur aplikasi.
+
+### AI Designer
+
+| Kemampuan                        | Deskripsi                                    | Status |
+| -------------------------------- | -------------------------------------------- | ------ |
+| **Desain dari prompt**           | Membuat desain otomatis dari deskripsi       | ✅      |
+| **Edit / Remix desain**          | Mengubah desain yang sudah dibuat            | ✅      |
+| **Kategori desain**              | Sertifikat, banner, poster, infografis, dll. | ✅      |
+| **Provider BYOK**                | Mendukung semua provider AI                  | ✅      |
+| **AI Image (generasi gambar)**   | Membuat gambar dari deskripsi                | ⬜      |
+
+### AI UI Editor
+
+| Kemampuan                        | Deskripsi                                    | Status |
+| -------------------------------- | -------------------------------------------- | ------ |
+| **Ubah UI aplikasi**             | Mengubah warna, menu, tombol, dan halaman    | ✅      |
+| **Tinjau sebelum diterapkan**    | AI menghasilkan patch yang dapat direview    | ✅      |
+| **Halaman kustom**               | Membuat halaman baru via perintah AI         | ✅      |
+| **Provider BYOK**                | Mendukung semua provider AI                  | ✅      |
+
+### Chat AI
+
+| Kemampuan                        | Deskripsi                                    | Status |
+| -------------------------------- | -------------------------------------------- | ------ |
+| **Mode Creatives**               | Menyarankan elemen / desain                  | ✅      |
+| **Mode Chatting**                | Percakapan bebas + perintah AI UI Editor     | ✅      |
+
+### Editor Visual
+
+| Kemampuan                        | Deskripsi                                    | Status |
+| -------------------------------- | -------------------------------------------- | ------ |
+| **Drag & Drop**                  | Susun elemen secara visual                   | ✅      |
+| **Elemen teks**                  | Teks, font, warna, bold, italic, align       | ✅      |
+| **Shape**                        | Rect, rounded, circle, triangle, line        | ✅      |
+| **Sticker & Ikon**               | Emoji dan ikon                               | ✅      |
+| **QR Code & Barcode**            | Elemen data otomatis                         | ✅      |
+| **Tabel & Grafik**               | Tabel dan chart                              | ✅      |
+| **Unggah Gambar**                | Upload + simpan aset gambar                  | ✅      |
+| **Simpan / Load Desain**         | Library desain pribadi                       | ✅      |
+| **Unduh PNG / PDF**              | Export hasil desain                          | ✅      |
+
+### Integrasi dengan Fitur Lain
+
+| Kemampuan                        | Deskripsi                                    | Status |
+| -------------------------------- | -------------------------------------------- | ------ |
+| **Certificate Designer**         | Desain sertifikat di dalam Creatives         | 🟡      |
+| **Quiz Designer**                | Editor Custom Quiz dalam satu tempat         | 🟡      |
+| **Flashcard Designer**           | Desain kartu belajar                         | ⬜      |
 
 ---
 
@@ -500,4 +555,4 @@
 - **✅** = Sudah diimplementasi
 - **🟡** = Dalam pengembangan
 
-*Dokumen terakhir diperbarui: 26 Juli 2026*
+*Dokumen terakhir diperbarui: 01 Agustus 2026*

@@ -28,6 +28,18 @@ const themeOptions = [
   { value: 'system', label: 'Ikuti Sistem' },
 ];
 
+const PROVIDER_LABELS: Record<string, string> = {
+  openrouter: 'OpenRouter',
+  openai: 'OpenAI',
+  mistral: 'Mistral AI',
+  anthropic: 'Anthropic',
+  google: 'Google Gemini',
+  omniroute: 'OmniRoute (Local)',
+  workersai: 'Workers AI',
+  groq: 'Groq',
+  deepseek: 'DeepSeek',
+};
+
 export default function Settings() {
   const { token } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
@@ -42,6 +54,13 @@ export default function Settings() {
   const [testing, setTesting] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [pickTask, setPickTask] = useState('chat');
+  const [pickPrefer, setPickPrefer] = useState('');
+  const [picking, setPicking] = useState(false);
+  const [pickResult, setPickResult] = useState<{
+    best: { provider: string; model: string; score: number; reasons: string[] };
+    ranking: Array<{ provider: string; model: string; score: number; reasons: string[] }>;
+  } | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -144,6 +163,28 @@ export default function Settings() {
     } catch {}
   }
 
+  async function handleAutoPick() {
+    if (!token) return;
+    setPicking(true);
+    setPickResult(null);
+    try {
+      const res: any = await api.post('/ai/auto-pick', {
+        task: pickTask,
+        ...(pickPrefer ? { prefer: pickPrefer } : {}),
+      }, token);
+      if (res.success) {
+        setPickResult(res.data);
+      } else {
+        setPickResult(null);
+        setTestResult({ ok: false, message: `❌ ${res.message}` });
+      }
+    } catch (e: any) {
+      setTestResult({ ok: false, message: `❌ ${e.message || 'Gagal memilih model'}` });
+    } finally {
+      setPicking(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 sm:px-0">
       <div>
@@ -154,6 +195,14 @@ export default function Settings() {
       <div className="card">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Profil</h2>
         <ProfileSection />
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Peran Akun</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Pilih peran kamu. Guru dan Siswa memiliki akses fitur yang sama; peran hanya menandai status.
+        </p>
+        <RoleSection token={token} />
       </div>
 
       <div className="card">
@@ -219,7 +268,7 @@ export default function Settings() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gunakan API key kamu sendiri untuk akses AI</p>
         <p className="mt-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
           ⚠️ <strong>OpenRouter memblokir server Cloudflare</strong>, jadi AI tidak bisa terhubung lewat provider itu.
-          Gunakan <strong>Mistral AI, OpenAI, Gemini, atau Anthropic</strong> agar AI berfungsi. Cek koneksi dengan tombol
+          Gunakan <strong>Mistral AI, Groq, DeepSeek, OpenAI, Gemini, atau Anthropic</strong> agar AI berfungsi. Cek koneksi dengan tombol
           <strong> 🧪 Test Koneksi</strong> sebelum menyimpan.
         </p>
 
@@ -358,6 +407,76 @@ export default function Settings() {
               </>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">🤖 Auto Pick Model</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Biarkan sistem memilih provider & model AI terbaik otomatis berdasarkan tugas dan key yang kamu punya.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Tugas</label>
+              <select className="input w-full" value={pickTask} onChange={e => setPickTask(e.target.value)}>
+                <option value="general">Umum</option>
+                <option value="chat">Chat</option>
+                <option value="coding">Coding</option>
+                <option value="reasoning">Reasoning / Analisis</option>
+                <option value="creative">Kreatif / Menulis</option>
+                <option value="vision">Vision (Gambar)</option>
+                <option value="image">Generate Gambar</option>
+                <option value="fast">Cepat / Ringan</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Prioritas</label>
+              <select className="input w-full" value={pickPrefer} onChange={e => setPickPrefer(e.target.value)}>
+                <option value="">Seimbang</option>
+                <option value="speed">Kecepatan</option>
+                <option value="cost">Hemat Biaya</option>
+              </select>
+            </div>
+          </div>
+
+          <button onClick={handleAutoPick} disabled={picking} className="btn-primary">
+            {picking ? 'Menganalisis...' : '🎯 Pilih Model Terbaik'}
+          </button>
+
+          {pickResult && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Model terbaik:</p>
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-gray-100">{pickResult.best.model}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {PROVIDER_LABELS[pickResult.best.provider] ?? pickResult.best.provider} · skor {Math.round(pickResult.best.score)}/100
+              </p>
+              {pickResult.best.reasons.length > 0 && (
+                <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs text-gray-600 dark:text-gray-400">
+                  {pickResult.best.reasons.map((r, i) => <li key={i}>{r}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {pickResult && pickResult.ranking.length > 1 && (
+            <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Peringkat ({pickResult.ranking.length} tersedia):</p>
+              <ol className="mt-2 space-y-1.5">
+                {pickResult.ranking.map((r, i) => (
+                  <li key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-800 dark:text-gray-200">
+                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">{i + 1}</span>
+                      {r.model}
+                      <span className="ml-2 text-xs text-gray-400">({PROVIDER_LABELS[r.provider] ?? r.provider})</span>
+                    </span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{Math.round(r.score)}/100</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -639,6 +758,77 @@ function ProfileSection() {
       <button onClick={handleSave} disabled={saving} className="btn-primary text-sm">
         {saving ? 'Menyimpan...' : 'Simpan Profil'}
       </button>
+    </div>
+  );
+}
+
+function RoleSection({ token }: { token: string | null }) {
+  const { user, setUser } = useAuthStore();
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const handleRole = async (role: 'student' | 'teacher') => {
+    if (!token || !user || user.role === role || user.role === 'admin') return;
+    setSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      const res: any = await api.post('/auth/role', { role }, token);
+      if (res.success && user) {
+        setUser({ ...user, role });
+        setMessage(res.message || (role === 'teacher' ? 'Akun diubah menjadi Guru' : 'Akun diubah menjadi Siswa'));
+      }
+    } catch (e: any) {
+      setError(e.message || 'Gagal mengubah peran');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!user) return null;
+
+  return (
+    <div className="mt-4 space-y-4">
+      {message && <p className="rounded-lg bg-emerald-50 p-2 text-sm text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">{message}</p>}
+      {error && <p className="rounded-lg bg-red-50 p-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{error}</p>}
+
+      {user.role === 'admin' ? (
+        <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+          Kamu login sebagai Admin, peran tidak dapat diubah.
+        </p>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => handleRole('student')}
+            disabled={saving || user.role === 'student'}
+            className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+              user.role === 'student'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                : 'border-gray-200 hover:border-primary-300 dark:border-gray-700'
+            }`}
+          >
+            <p className="font-semibold text-gray-900 dark:text-gray-100">👨‍🎓 Siswa</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {user.role === 'student' ? 'Peran aktif saat ini' : 'Klik untuk beralih ke peran Siswa'}
+            </p>
+          </button>
+          <button
+            onClick={() => handleRole('teacher')}
+            disabled={saving || user.role === 'teacher'}
+            className={`rounded-xl border px-4 py-3 text-left transition-colors ${
+              user.role === 'teacher'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                : 'border-gray-200 hover:border-primary-300 dark:border-gray-700'
+            }`}
+          >
+            <p className="font-semibold text-gray-900 dark:text-gray-100">👩‍🏫 Guru</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {user.role === 'teacher' ? 'Peran aktif saat ini' : 'Klik untuk beralih ke peran Guru'}
+            </p>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

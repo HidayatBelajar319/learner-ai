@@ -611,17 +611,37 @@ learning.post('/flashcards/import', async (c) => {
 /**
  * GET /api/learning/certificates
  * Mendapatkan sertifikat user
+ * Query: q (cari judul), category (filter tipe/kategori)
  */
 learning.get('/certificates', async (c) => {
   const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
   if (!payload) return errorResponse('Unauthorized', 401);
 
-  const certs = await c.env.LEARNER_DB
-    .prepare('SELECT * FROM certificates WHERE user_id = ? ORDER BY issued_at DESC')
-    .bind(payload.sub)
-    .all();
+  const q = (c.req.query('q') ?? '').trim();
+  const category = (c.req.query('category') ?? '').trim();
 
-  return successResponse('Sertifikat', certs.results);
+  let sql = 'SELECT * FROM certificates WHERE user_id = ?';
+  const params: string[] = [payload.sub];
+
+  if (category) {
+    sql += ' AND type = ?';
+    params.push(category);
+  }
+  if (q) {
+    sql += ' AND title LIKE ?';
+    params.push(`%${q}%`);
+  }
+  sql += ' ORDER BY issued_at DESC';
+
+  const certs = await c.env.LEARNER_DB.prepare(sql).bind(...params).all();
+
+  return successResponse('Sertifikat', certs.results.map((r: any) => {
+    try {
+      return { ...r, parsed: JSON.parse(r.data) };
+    } catch {
+      return { ...r, parsed: null };
+    }
+  }));
 });
 
 /**
@@ -676,6 +696,99 @@ learning.post('/certificates/generate', async (c) => {
   await awardAchievement(c.env.LEARNER_DB, payload.sub, 'first_certificate');
 
   return successResponse('Sertifikat dibuat', { id: certId, title, data: JSON.parse(certData) });
+});
+
+/**
+ * PUT /api/learning/certificates/:id
+ * Edit sertifikat (judul, tipe, subject, dan data desain custom)
+ */
+learning.put('/certificates/:id', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { title?: string; type?: string; subject?: string; data?: Record<string, any> };
+  try { body = await c.req.json(); } catch { return errorResponse('Format tidak valid'); }
+
+  const existing = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM certificates WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), payload.sub)
+    .first<any>();
+
+  if (!existing) return errorResponse('Sertifikat tidak ditemukan', 404);
+
+  const current = (() => {
+    try { return JSON.parse(existing.data); } catch { return {}; }
+  })();
+
+  const title = body.title !== undefined ? String(body.title).trim() : existing.title;
+  const type = body.type !== undefined ? String(body.type).trim() : existing.type;
+  const nextData = {
+    ...current,
+    ...(body.data ?? {}),
+    id: current.id ?? existing.id,
+    title,
+    type,
+    subject: body.subject !== undefined ? body.subject : (current.subject ?? ''),
+  };
+
+  await c.env.LEARNER_DB
+    .prepare('UPDATE certificates SET title = ?, type = ?, data = ? WHERE id = ? AND user_id = ?')
+    .bind(title, type, JSON.stringify(nextData), existing.id, payload.sub)
+    .run();
+
+  return successResponse('Sertifikat diperbarui', { id: existing.id, title, type, data: nextData });
+});
+
+/**
+ * DELETE /api/learning/certificates/:id
+ * Hapus sertifikat
+ */
+learning.delete('/certificates/:id', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  await c.env.LEARNER_DB
+    .prepare('DELETE FROM certificates WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), payload.sub)
+    .run();
+
+  return successResponse('Sertifikat dihapus');
+});
+
+/**
+ * POST /api/learning/certificates/:id/duplicate
+ * Duplikasi sertifikat sebagai template
+ */
+learning.post('/certificates/:id/duplicate', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  const existing = await c.env.LEARNER_DB
+    .prepare('SELECT * FROM certificates WHERE id = ? AND user_id = ?')
+    .bind(c.req.param('id'), payload.sub)
+    .first<any>();
+
+  if (!existing) return errorResponse('Sertifikat tidak ditemukan', 404);
+
+  const newId = generateId();
+  const nowStr = now();
+  const current = (() => {
+    try { return JSON.parse(existing.data); } catch { return {}; }
+  })();
+
+  const copy = {
+    ...current,
+    id: newId,
+    title: `${existing.title} (Salinan)`,
+    issued_at: nowStr,
+  };
+
+  await c.env.LEARNER_DB
+    .prepare('INSERT INTO certificates (id, user_id, type, title, data, issued_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(newId, payload.sub, existing.type, copy.title, JSON.stringify(copy), nowStr)
+    .run();
+
+  return successResponse('Sertifikat diduplikasi', { id: newId, title: copy.title, data: copy });
 });
 
 /**

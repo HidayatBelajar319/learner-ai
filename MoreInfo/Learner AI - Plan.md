@@ -1,6 +1,6 @@
 # Learner AI - Plan (Roadmap Pengembangan)
 
-**Versi:** 1.0.0 | **Tanggal:** 26 Juli 2026 | **Developer:** HidayatBelajar319
+**Versi:** 1.0.0 | **Tanggal:** 01 Agustus 2026 | **Developer:** HidayatBelajar319
 
 ---
 
@@ -142,6 +142,21 @@
 - Semua fitur utama
 
 **Status:** ✅ Selesai (flashcard, sertifikat, playground, AI code, mind map, diagram)
+
+---
+
+### Milestone 3.5: Major Update (Agustus 2026)
+
+**Fitur:**
+
+- Creatives (editor visual ala Canva + AI Designer + Chat AI + AI UI Editor)
+- Guru &amp; Siswa (role akun setara)
+- Custom Quiz (7 jenis soal)
+- Auto Pick Model
+- OmniRoute (provider lokal) + dokumentasi `docs/providers/omniroute.md`
+- Dokumentasi `docs/Features.md` diperbarui
+
+**Status:** 🟡 Sebagian selesai
 
 ---
 
@@ -326,4 +341,4 @@
 
 ---
 
-*Dokumen terakhir diperbarui: 26 Juli 2026*
+*Dokumen terakhir diperbarui: 01 Agustus 2026*

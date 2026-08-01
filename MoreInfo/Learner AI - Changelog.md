@@ -2,6 +2,27 @@
 
 *Tempat dimana Changelog berada.*
 
+## [0.6.0] - 1 Agustus 2026
+
+### Ditambahkan / Diperbarui
+- **Creatives — editor visual ala Canva** (major feature, sidebar baru "Creatives"):
+  - Kanvas drag & drop: teks, shape (rect/rounded/circle/triangle/line), sticker, ikon, QR Code, barcode, tabel, chart.
+  - Unggah gambar (tersimpan sebagai aset), simpan/load desain pribadi, unduh PNG/PDF.
+  - **AI Designer:** generate desain dari prompt (kategori sertifikat/banner/poster/infografis/undangan/kartu/presentasi/lembar kerja/desain) + remix/edit desain.
+  - **Chat AI** (tab "Chat AI" di Creatives) dengan 2 mode: *Creatives* (bantuan desain) dan *Chatting* (percakapan bebas + perintah AI UI Editor).
+  - **AI UI Editor:** AI mengubah UI aplikasi (warna sidebar, menu, tombol, halaman baru) lewat prompt, menghasilkan *patch* yang ditinjau sebelum diterapkan; halaman kustom tampil di sidebar; simpan preferensi UI (theme, sidebar) per user.
+  - Migration `0012_creatives_custom_quiz.sql` & `0013_ui_editor.sql`: tabel `creative_designs`, `creative_assets`, `user_ui_settings`, `ui_custom_pages`.
+  - API baru: `/api/creatives/*` (designs generate/remix/CRUD, assets, chat), `/api/ui/*` (settings, design, pages).
+  - Tailwind primary kini berbasis CSS variable (`--primary-*`) agar AI bisa mengubah warna tema.
+- **Guru & Siswa** (role akun):
+  - `POST /api/auth/role` — user mengubah perannya sendiri (Siswa/Guru; admin diblokir).
+  - `POST /api/admin/users/:id/role` — admin mengubah role user (Siswa/Guru/Premium).
+  - UI: dropdown role di tabel Admin, kartu pilihan peran di Pengaturan, badge role di header.
+- **Custom Quiz** (7 jenis soal): Pilihan Ganda, Essay, True/False, Checkbox, Matching, Fill in the Blank, Short Answer; nilai/timer/penjelasan per soal.
+- **Auto Pick Model:** AI memilih model terbaik (kecepatan, harga, context, coding, reasoning, vision) dari semua provider; pilihan baru di halaman AI Playground.
+- **OmniRoute:** dokumentasi baru `docs/providers/omniroute.md` (cara install/jalankan/konfigurasi/debug; harus berjalan sebelum dipakai LearnerAI) + `docs/Features.md`.
+- **Deploy:** migration `0012` & `0013` perlu diterapkan ke D1 (`wrangler d1 execute learner-db --remote --file=…`), lalu `wrangler deploy`.
+
 ## [0.5.0] - 1 Agustus 2026
 
 ### Ditambahkan / Diperbarui

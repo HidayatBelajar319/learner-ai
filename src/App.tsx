@@ -11,10 +11,14 @@ import Learn from '@/pages/learn';
 import Practice from '@/pages/practice';
 import Quiz from '@/pages/quiz';
 import Flashcards from '@/pages/flashcards';
+import CustomQuiz from '@/pages/custom-quiz';
 import Certificates from '@/pages/certificates';
 import Playground from '@/pages/playground';
 import Visual from '@/pages/visual';
 import Social from '@/pages/social';
+import Creatives from '@/pages/creatives';
+import UiEditor from '@/pages/ui-editor';
+import UiPageView from '@/pages/ui-page';
 import Settings from '@/pages/settings';
 import AdminDashboard from '@/pages/admin';
 import TermsOfService from '@/pages/tos';
@@ -132,9 +136,13 @@ export default function App() {
         <Route path="practice" element={<Practice />} />
         <Route path="quiz" element={<Quiz />} />
         <Route path="flashcards" element={<Flashcards />} />
+        <Route path="custom-quiz" element={<CustomQuiz />} />
         <Route path="certificates" element={<Certificates />} />
         <Route path="playground" element={<Playground />} />
         <Route path="visual" element={<Visual />} />
+        <Route path="creatives" element={<Creatives />} />
+        <Route path="ui-editor" element={<UiEditor />} />
+        <Route path="ui/page/:id" element={<UiPageView />} />
         <Route path="social" element={<Social />} />
         <Route path="settings" element={<Settings />} />
         <Route path="admin" element={<AdminDashboard />} />

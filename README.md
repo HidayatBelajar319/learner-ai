@@ -178,6 +178,8 @@ npm run deploy
 | [**Architecture**](MoreInfo/Learner%20AI%20-%20Architecture.md)| Arsitektur sistem           |
 | [**Rules**](MoreInfo/Learner%20AI%20-%20Rules.md)| Aturan pengembangan         |
 | [**Changelog**](MoreInfo/Learner%20AI%20-%20Changelog.md)| Riwayat perubahan           |
+| [**Features (docs)**](docs/Features.md)| Fitur Creatives &amp; AI      |
+| [**OmniRoute**](docs/providers/omniroute.md)| Provider AI lokal           |
 
 
 ---

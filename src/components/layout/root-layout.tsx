@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/contexts/auth-store';
+import { useUiStore } from '@/contexts/ui-settings-store';
 import XpProgress from '@/components/learning/xp-progress';
 import Logo from '@/components/brand/logo';
 const baseNavItems = [
@@ -8,28 +9,42 @@ const baseNavItems = [
   { to: '/learn', label: 'Belajar', icon: '📚' },
   { to: '/practice', label: 'Latihan', icon: '✏️' },
   { to: '/quiz', label: 'Quiz', icon: '📝' },
+  { to: '/custom-quiz', label: 'Quiz Kustom', icon: '📝' },
   { to: '/flashcards', label: 'Flashcards', icon: '🃏' },
   { to: '/certificates', label: 'Sertifikat', icon: '🏆' },
   { to: '/playground', label: 'Playground', icon: '💻' },
   { to: '/visual', label: 'Visual', icon: '🧠' },
+  { to: '/creatives', label: 'Desain', icon: '🎨' },
+  { to: '/ui-editor', label: 'AI UI', icon: '🖌️' },
   { to: '/social', label: 'Sosial', icon: '👥' },
   { to: '/settings', label: 'Pengaturan', icon: '⚙️' },
 ];
 
 export default function RootLayout() {
   const { user, clearAuth, accountNotice } = useAuthStore();
+  const { token } = useAuthStore();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [noticeDismissed, setNoticeDismissed] = useState(false);
+
+  const { pages, load } = useUiStore();
+
+  useEffect(() => {
+    if (token) load(token);
+  }, [token, load]);
 
   const navItems = user?.role === 'admin'
     ? [...baseNavItems, { to: '/admin', label: 'Admin', icon: '🛡️' }]
     : baseNavItems;
 
+  const customMenu = pages.map((p) => ({ to: `/ui/page/${p.id}`, label: p.title, icon: p.icon || '📄' }));
+
   const handleLogout = () => {
     clearAuth();
     navigate('/login', { replace: true });
   };
+
+  const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'teacher' ? 'Guru' : user?.role === 'premium' ? 'Premium' : 'Siswa';
 
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -50,10 +65,13 @@ export default function RootLayout() {
         </div>
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform dark:border-gray-800 dark:bg-gray-900 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6 dark:border-gray-800">
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 transition-transform dark:border-gray-800 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ backgroundColor: 'var(--ui-sidebar-bg)', color: 'var(--ui-sidebar-text)' }}
+      >
+        <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6 dark:border-gray-800" style={{ borderColor: 'var(--ui-sidebar-text, #e5e7eb)' }}>
           <Logo size={28} />
-          <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+          <span className="text-lg font-bold" style={{ color: 'var(--ui-sidebar-text)' }}>
             Learner<span className="text-primary-500">AI</span>
           </span>
         </div>
@@ -67,15 +85,48 @@ export default function RootLayout() {
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+                    ? 'text-primary-700 dark:text-primary-300'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`
+              }
+              style={({ isActive }) =>
+                isActive
+                  ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                  : { color: 'var(--ui-sidebar-text)' }
               }
             >
               {item.icon}
               {item.label}
             </NavLink>
           ))}
+
+          {customMenu.length > 0 && (
+            <>
+              <div className="pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ui-sidebar-text)', opacity: 0.6 }}>
+                Halaman Kustom
+              </div>
+              {customMenu.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      isActive ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`
+                  }
+                  style={({ isActive }) =>
+                    isActive
+                      ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                      : { color: 'var(--ui-sidebar-text)' }
+                  }
+                >
+                  {item.icon}
+                  {item.label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="border-t border-gray-100 p-3 dark:border-gray-800">
@@ -97,7 +148,14 @@ export default function RootLayout() {
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user?.full_name}</p>
+              <p className="flex items-center justify-end gap-1.5 text-sm font-medium text-gray-900 dark:text-gray-100">
+                {user?.full_name}
+                {(user?.role === 'admin' || user?.role === 'teacher') && (
+                  <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-semibold text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+                    {roleLabel}
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
             </div>
             {(user?.profile?.avatar as string) ? (

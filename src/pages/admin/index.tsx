@@ -96,6 +96,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const changeRole = async (u: AdminUser, role: string) => {
+    if (u.role === role) return;
+    setError('');
+    setMessage('');
+    try {
+      await api.post(`/admin/users/${u.id}/role`, { role }, token);
+      setMessage(`Role ${u.email} diubah menjadi ${role}`);
+      load();
+    } catch (e: any) {
+      setError(e?.message || 'Gagal mengubah role');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center pt-16">
@@ -157,9 +170,21 @@ export default function AdminDashboard() {
                   <td className="py-2 pr-4 font-medium text-gray-900 dark:text-gray-100">{u.full_name}</td>
                   <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{u.email}</td>
                   <td className="py-2 pr-4">
-                    <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-900/50 dark:text-primary-300">
-                      {u.role}
-                    </span>
+                    {u.role === 'admin' ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                        admin
+                      </span>
+                    ) : (
+                      <select
+                        value={u.role}
+                        onChange={(e) => changeRole(u, e.target.value)}
+                        className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-primary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                      >
+                        <option value="student">Siswa</option>
+                        <option value="teacher">Guru</option>
+                        <option value="premium">Premium</option>
+                      </select>
+                    )}
                   </td>
                   <td className="py-2 pr-4 text-gray-600 dark:text-gray-400">{u.total_xp ?? 0}</td>
                   <td className="py-2 pr-4">

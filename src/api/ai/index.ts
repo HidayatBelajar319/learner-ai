@@ -4,6 +4,7 @@ import { successResponse, errorResponse, generateId, now } from '@/api/utils/hel
 import { verifyToken, extractToken } from '@/lib/auth/jwt';
 import { chat, PROVIDERS, ProviderName, ChatMessage } from '@/lib/ai/providers';
 import { getTool, toolSchemas, ToolContext } from '@/lib/ai/tools';
+import { pickBestModel, rankModels, AiTask } from '@/lib/ai/auto-pick';
 
 const ai = new Hono<{ Bindings: Env }>();
 
@@ -27,7 +28,7 @@ ai.post('/chat', async (c) => {
 
   let body: {
     messages: ChatMessage[];
-    provider?: ProviderName;
+    provider?: ProviderName | 'auto';
     model?: string;
     use_tools?: boolean;
   };
@@ -47,33 +48,57 @@ ai.post('/chat', async (c) => {
     .bind(payload.sub)
     .all<{ provider: string; key_value: string; model: string | null; base_url: string | null }>();
 
-  const requested = userKeys.results.find(k => k.provider === provider) ?? userKeys.results[0];
-  if (!requested && !c.env.MISTRAL_API_KEY && !c.env.AI) {
-    return errorResponse('API key AI tidak ditemukan. Tambahkan key di Pengaturan atau pakai Workers AI bawaan.', 400);
+  // Auto Pick Model: pilih provider+model terbaik otomatis bila diminta 'auto'
+  let resolvedProvider = provider;
+  let resolvedModel = model;
+  let pickInfo: { provider: ProviderName; model: string; score: number; reasons: string[] } | null = null;
+
+  const availableForPick: Array<{ provider: ProviderName; model: string }> = [];
+  for (const k of userKeys.results) {
+    availableForPick.push({ provider: k.provider as ProviderName, model: k.model || PROVIDERS.find((p) => p.name === k.provider)?.defaultModel || '' });
+  }
+  if (c.env.MISTRAL_API_KEY) availableForPick.push({ provider: 'mistral', model: 'mistral-small-latest' });
+  if (c.env.AI) availableForPick.push({ provider: 'workersai', model: '@cf/openai/gpt-oss-20b' });
+
+  if (provider === 'auto') {
+    pickInfo = pickBestModel(availableForPick.filter((a) => a.model), 'chat');
+    resolvedProvider = pickInfo.provider;
+    resolvedModel = pickInfo.model;
   }
 
   const ctx: ToolContext = { env: c.env, userId: payload.sub, email: payload.email };
   const workingMessages: ChatMessage[] = [{ role: 'system', content: SYSTEM_PROMPT }, ...messages];
 
+  const hasAny = userKeys.results.length > 0 || Boolean(c.env.MISTRAL_API_KEY) || Boolean(c.env.AI);
+  if (!hasAny) {
+    return errorResponse('API key AI tidak ditemukan. Tambahkan key di Pengaturan atau pakai Workers AI bawaan.', 400);
+  }
+
+  // Model eksplisit hanya dipakai untuk provider hasil auto-pick (agar tidak bocor ke key lain)
+  const modelFor = (p: ProviderName) => (pickInfo ? (p === resolvedProvider ? resolvedModel : undefined) : resolvedModel || model || undefined);
+
   const candidates: Array<{ provider: ProviderName; apiKey: string; model?: string; baseUrl?: string; ai?: unknown }> = [];
-  const ordered = requested ? [requested, ...userKeys.results.filter(k => k.provider !== requested.provider)] : userKeys.results;
+  const ordered = [...userKeys.results].sort((a, b) =>
+    (b.provider === resolvedProvider ? 1 : 0) - (a.provider === resolvedProvider ? 1 : 0),
+  );
   for (const k of ordered) {
-    candidates.push({ provider: k.provider as ProviderName, apiKey: k.key_value, model: model || k.model || undefined, baseUrl: k.base_url || undefined });
+    const p = k.provider as ProviderName;
+    candidates.push({ provider: p, apiKey: k.key_value, model: modelFor(p) || k.model || undefined, baseUrl: k.base_url || undefined });
   }
   if (c.env.MISTRAL_API_KEY && !candidates.some(c => c.provider === 'mistral')) {
-    candidates.push({ provider: 'mistral', apiKey: c.env.MISTRAL_API_KEY, model: model || undefined });
+    candidates.push({ provider: 'mistral', apiKey: c.env.MISTRAL_API_KEY, model: modelFor('mistral') || undefined });
   }
   const workersCand = candidates.find(c => c.provider === 'workersai');
   if (workersCand && c.env.AI) {
     workersCand.ai = c.env.AI;
-    if (model && !workersCand.model) workersCand.model = model;
+    if (modelFor('workersai') && !workersCand.model) workersCand.model = modelFor('workersai');
   } else if (c.env.AI) {
-    candidates.push({ provider: 'workersai', apiKey: '', ai: c.env.AI, model: model || undefined });
+    candidates.push({ provider: 'workersai', apiKey: '', ai: c.env.AI, model: modelFor('workersai') || undefined });
   }
 
   const errors: string[] = [];
 
-  for (const cand of candidates) {
+    for (const cand of candidates) {
     try {
       const result = await chatWithToolLoop(cand, [...workingMessages], use_tools, ctx);
       return successResponse('Respon AI berhasil', {
@@ -82,6 +107,7 @@ ai.post('/chat', async (c) => {
         provider: cand.provider,
         usage: result.usage,
         tools_used: result.tools_used,
+        ...(pickInfo ? { auto_pick: { provider: pickInfo.provider, model: pickInfo.model, score: pickInfo.score, reasons: pickInfo.reasons } } : {}),
       });
     } catch (err: any) {
       const label = PROVIDERS.find(p => p.name === cand.provider)?.label ?? cand.provider;
@@ -169,6 +195,51 @@ ai.get('/providers', async (c) => {
   if (!payload) return errorResponse('Unauthorized', 401);
 
   return successResponse('Daftar provider AI', PROVIDERS);
+});
+
+/**
+ * POST /api/ai/auto-pick
+ * Auto Pick Model: pilih model terbaik otomatis untuk sebuah tugas
+ * Body: { task: 'general'|'chat'|'coding'|'reasoning'|'creative'|'vision'|'image'|'fast', prefer?: 'speed'|'cost' }
+ */
+ai.post('/auto-pick', async (c) => {
+  const payload = await requireAuth(c.req.raw, c.env.JWT_SECRET);
+  if (!payload) return errorResponse('Unauthorized', 401);
+
+  let body: { task?: AiTask; prefer?: 'speed' | 'cost' };
+  try { body = await c.req.json(); } catch { return errorResponse('Format request tidak valid'); }
+
+  const task: AiTask = body.task || 'general';
+
+  const userKeys = await c.env.LEARNER_DB
+    .prepare('SELECT provider, key_value, model, base_url FROM api_keys WHERE user_id = ? AND is_active = 1 ORDER BY updated_at DESC')
+    .bind(payload.sub)
+    .all<{ provider: string; key_value: string; model: string | null; base_url: string | null }>();
+
+  const available: Array<{ provider: ProviderName; model: string }> = [];
+  for (const k of userKeys.results) {
+    const config = PROVIDERS.find((p) => p.name === k.provider);
+    const m = k.model || config?.defaultModel;
+    if (m) available.push({ provider: k.provider as ProviderName, model: m });
+  }
+  if (c.env.MISTRAL_API_KEY) available.push({ provider: 'mistral', model: 'mistral-small-latest' });
+  if (c.env.AI) available.push({ provider: 'workersai', model: '@cf/openai/gpt-oss-20b' });
+  if (c.env.AI) available.push({ provider: 'workersai', model: '@cf/openai/gpt-oss-120b' });
+  if (c.env.AI) available.push({ provider: 'workersai', model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast' });
+  if (c.env.AI) available.push({ provider: 'workersai', model: '@cf/zai-org/glm-4.7-flash' });
+
+  if (available.length === 0) {
+    return errorResponse('Tidak ada provider AI tersedia. Tambahkan API key atau aktifkan Workers AI.', 400);
+  }
+
+  const best = pickBestModel(available, task, body.prefer ? { prefer: body.prefer } : undefined);
+  const ranking = rankModels(available, task).slice(0, 10);
+
+  return successResponse('Model terbaik', {
+    best: { provider: best.provider, model: best.model, score: best.score, reasons: best.reasons },
+    ranking,
+    available_count: available.length,
+  });
 });
 
 ai.get('/keys', async (c) => {
