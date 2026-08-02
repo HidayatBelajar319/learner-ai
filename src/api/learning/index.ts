@@ -281,7 +281,7 @@ learning.get('/flashcards/decks', async (c) => {
   const q = (c.req.query('q') ?? '').trim();
   const subject = (c.req.query('subject') ?? '').trim();
 
-  let sql = `SELECT d.*, (SELECT COUNT(*) FROM flashcards f WHERE f.deck_id = d.id OR (f.deck_id IS NULL AND f.subject = d.subject)) AS card_count FROM flashcard_decks d WHERE d.user_id = ?`;
+  let sql = `SELECT d.*, (SELECT COUNT(*) FROM flashcards f WHERE f.user_id = d.user_id AND f.deck_id = d.id) AS card_count FROM flashcard_decks d WHERE d.user_id = ?`;
   const params: string[] = [payload.sub];
 
   if (subject) {
@@ -340,8 +340,8 @@ learning.delete('/flashcards/decks/:deckId', async (c) => {
   if (!deck) return errorResponse('Deck tidak ditemukan', 404);
 
   const cardRes = await c.env.LEARNER_DB
-    .prepare('DELETE FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))')
-    .bind(payload.sub, deck.id, deck.subject)
+    .prepare('DELETE FROM flashcards WHERE user_id = ? AND deck_id = ?')
+    .bind(payload.sub, deck.id)
     .run();
 
   await c.env.LEARNER_DB
@@ -368,8 +368,8 @@ learning.get('/flashcards/decks/:deckId/export', async (c) => {
   if (!deck) return errorResponse('Deck tidak ditemukan', 404);
 
   const cards = await c.env.LEARNER_DB
-    .prepare('SELECT id, front, back, topic, tags, difficulty, is_favorite, created_at FROM flashcards WHERE deck_id = ? OR (deck_id IS NULL AND subject = ?) ORDER BY created_at ASC')
-    .bind(deck.id, deck.subject)
+    .prepare('SELECT id, front, back, topic, tags, difficulty, is_favorite, created_at FROM flashcards WHERE deck_id = ? ORDER BY created_at ASC')
+    .bind(deck.id)
     .all();
 
   return successResponse('Export flashcard', {
@@ -398,8 +398,8 @@ learning.get('/flashcards/decks/:deckId', async (c) => {
   const q = (c.req.query('q') ?? '').trim();
   const favorite = c.req.query('favorite');
 
-  let sql = 'SELECT * FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))';
-  const params: unknown[] = [payload.sub, deck.id, deck.subject];
+  let sql = 'SELECT * FROM flashcards WHERE user_id = ? AND deck_id = ?';
+  const params: unknown[] = [payload.sub, deck.id];
 
   if (favorite === '1') {
     sql += ' AND is_favorite = 1';
@@ -414,8 +414,8 @@ learning.get('/flashcards/decks/:deckId', async (c) => {
   const cards = await c.env.LEARNER_DB.prepare(sql).bind(...params).all();
 
   const countRes = await c.env.LEARNER_DB
-    .prepare('SELECT COUNT(*) as count FROM flashcards WHERE user_id = ? AND (deck_id = ? OR (deck_id IS NULL AND subject = ?))')
-    .bind(payload.sub, deck.id, deck.subject)
+    .prepare('SELECT COUNT(*) as count FROM flashcards WHERE user_id = ? AND deck_id = ?')
+    .bind(payload.sub, deck.id)
     .first<{ count: number }>();
 
   return successResponse('Kartu flashcard', {

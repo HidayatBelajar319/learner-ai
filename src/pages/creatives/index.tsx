@@ -6,6 +6,7 @@ import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import ReactMarkdown from 'react-markdown';
 
 /* ============================================================
  * TIPE DATA
@@ -1288,8 +1289,14 @@ export default function CreativesPage() {
                       )
                     ) : (
                       chatMsgs.map((m, i) => (
-                        <div key={i} className={`max-w-[95%] whitespace-pre-wrap rounded-lg px-2.5 py-1.5 text-xs ${m.role === 'user' ? 'ml-auto bg-primary-100 text-primary-900 dark:bg-primary-900/40 dark:text-primary-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'}`}>
-                          {m.content}
+                        <div key={i} className={`max-w-[95%] rounded-lg px-2.5 py-1.5 text-xs ${m.role === 'user' ? 'ml-auto bg-primary-100 text-primary-900 dark:bg-primary-900/40 dark:text-primary-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'}`}>
+                          {m.role === 'user' ? (
+                            <span className="whitespace-pre-wrap">{m.content}</span>
+                          ) : (
+                            <div className="prose prose-xs dark:prose-invert max-w-none [&>p]:mb-1 [&>p:last-child]:mb-0 [&>ul]:mt-1 [&>ul]:pl-4 [&>ol]:mt-1 [&>ol]:pl-4 [&>pre]:overflow-x-auto [&>pre]:rounded [&>pre]:bg-gray-200 [&>pre]:p-2 dark:[&>pre]:bg-gray-700 [&>code]:rounded [&>code]:bg-gray-200 [&>code]:px-1 dark:[&>code]:bg-gray-700">
+                              <ReactMarkdown>{m.content}</ReactMarkdown>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}

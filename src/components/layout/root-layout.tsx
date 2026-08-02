@@ -9,7 +9,6 @@ const baseNavItems = [
   { to: '/learn', label: 'Belajar', icon: '📚' },
   { to: '/practice', label: 'Latihan', icon: '✏️' },
   { to: '/quiz', label: 'Quiz', icon: '📝' },
-  { to: '/custom-quiz', label: 'Quiz Kustom', icon: '📝' },
   { to: '/flashcards', label: 'Flashcards', icon: '🃏' },
   { to: '/certificates', label: 'Sertifikat', icon: '🏆' },
   { to: '/playground', label: 'Playground', icon: '💻' },
@@ -66,7 +65,7 @@ export default function RootLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 transition-transform dark:border-gray-800 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 transition-all duration-300 ease-in-out dark:border-gray-800 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ backgroundColor: 'var(--ui-sidebar-bg)', color: 'var(--ui-sidebar-text)' }}
       >
         <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-6 dark:border-gray-800" style={{ borderColor: 'var(--ui-sidebar-text, #e5e7eb)' }}>
@@ -77,27 +76,54 @@ export default function RootLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-4">
+          {user?.role === 'teacher' && (
+            <div className="pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ui-sidebar-text)', opacity: 0.6 }}>
+              Guru
+            </div>
+          )}
+
           {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            <div key={item.to}>
+              <NavLink
+                to={item.to}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                    isActive
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`
+                }
+                style={({ isActive }) =>
                   isActive
-                    ? 'text-primary-700 dark:text-primary-300'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`
-              }
-              style={({ isActive }) =>
-                isActive
-                  ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
-                  : { color: 'var(--ui-sidebar-text)' }
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
+                    ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                    : { color: 'var(--ui-sidebar-text)' }
+                }
+              >
+                {item.icon}
+                {item.label}
+              </NavLink>
+              {item.to === '/quiz' && (
+                <NavLink
+                  to="/quiz/custom"
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `ml-6 flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                      isActive
+                        ? 'text-primary-700 dark:text-primary-300'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`
+                  }
+                  style={({ isActive }) =>
+                    isActive
+                      ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                      : { color: 'var(--ui-sidebar-text)', opacity: 0.85 }
+                  }
+                >
+                  ✏️ Quiz Kustom
+                </NavLink>
+              )}
+            </div>
           ))}
 
           {customMenu.length > 0 && (
@@ -111,7 +137,7 @@ export default function RootLayout() {
                   to={item.to}
                   onClick={() => setSidebarOpen(false)}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
                       isActive ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                     }`
                   }
@@ -125,6 +151,50 @@ export default function RootLayout() {
                   {item.label}
                 </NavLink>
               ))}
+            </>
+          )}
+
+          {user?.role === 'teacher' && (
+            <>
+              <div className="pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ui-sidebar-text)', opacity: 0.6 }}>
+                Alat Guru
+              </div>
+              <NavLink
+                to="/quiz/custom"
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                    isActive
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                    : { color: 'var(--ui-sidebar-text)' }
+                }
+              >
+                ✏️ Quiz Kustom
+              </NavLink>
+              <NavLink
+                to="/creatives"
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                    isActive
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`
+                }
+                style={({ isActive }) =>
+                  isActive
+                    ? { backgroundColor: 'var(--ui-sidebar-active-bg)', color: 'var(--ui-sidebar-active-text)' }
+                    : { color: 'var(--ui-sidebar-text)' }
+                }
+              >
+                🎨 Desain
+              </NavLink>
             </>
           )}
         </nav>
@@ -181,12 +251,12 @@ export default function RootLayout() {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-around border-t border-gray-200 bg-white py-2 dark:border-gray-800 dark:bg-gray-900 md:hidden">
-        {navItems.map((item) => (
+        {navItems.slice(0, 5).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium transition-colors ${
+              `flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium transition-colors duration-150 ${
                 isActive ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300'
               }`
             }

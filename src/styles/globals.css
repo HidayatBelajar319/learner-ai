@@ -68,3 +68,27 @@ html {
     @apply rounded-xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900;
   }
 }
+
+/* Fade in animation for page transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+main > * {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Better focus styles */
+.input:focus, button:focus-visible {
+  outline: 2px solid rgb(var(--primary-500));
+  outline-offset: 2px;
+}
+
+/* Smooth card hover */
+.card {
+  transition: box-shadow 0.15s ease;
+}
+.card:hover {
+  box-shadow: 0 2px 12px 0 rgb(0 0 0 / 0.07);
+}
