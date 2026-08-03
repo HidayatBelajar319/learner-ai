@@ -4,3 +4,4 @@ dist/
 *.log
 .wrangler/
 next.txt
+src/asset-index.ts

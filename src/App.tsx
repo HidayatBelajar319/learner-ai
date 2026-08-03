@@ -17,6 +17,7 @@ const Certificates = lazy(() => import('@/pages/certificates'));
 const Playground = lazy(() => import('@/pages/playground'));
 const Visual = lazy(() => import('@/pages/visual'));
 const Social = lazy(() => import('@/pages/social'));
+const AiChat = lazy(() => import('@/pages/ai-chat'));
 const Creatives = lazy(() => import('@/pages/creatives'));
 const UiEditor = lazy(() => import('@/pages/ui-editor'));
 const UiPageView = lazy(() => import('@/pages/ui-page'));
@@ -176,6 +177,7 @@ export default function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="ai-chat" element={<AiChat />} />
             <Route path="learn" element={<Learn />} />
             <Route path="learn/:subjectId" element={<Learn />} />
             <Route path="learn/:subjectId/:contentId" element={<Learn />} />

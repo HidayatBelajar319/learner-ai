@@ -464,6 +464,19 @@ export default function CreativesPage() {
   useEffect(() => { refreshDesigns(); }, [token, search, libraryCat]);
   useEffect(() => { refreshAssets(); }, [token]);
 
+  // Buka desain langsung dari tautan (contoh: /creatives?design=ID dari AI Chat)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('design');
+    if (target && token) {
+      openDesign(target);
+      params.delete('design');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   const openDesign = async (id: string) => {
     if (!token) return;
     try {

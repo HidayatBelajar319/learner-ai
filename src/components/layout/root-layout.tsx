@@ -6,6 +6,7 @@ import XpProgress from '@/components/learning/xp-progress';
 import Logo from '@/components/brand/logo';
 const baseNavItems = [
   { to: '/dashboard', label: 'Beranda', icon: '🏠' },
+  { to: '/ai-chat', label: 'AI Chat', icon: '💬' },
   { to: '/learn', label: 'Belajar', icon: '📚' },
   { to: '/practice', label: 'Latihan', icon: '✏️' },
   { to: '/quiz', label: 'Quiz', icon: '📝' },
@@ -13,7 +14,7 @@ const baseNavItems = [
   { to: '/certificates', label: 'Sertifikat', icon: '🏆' },
   { to: '/playground', label: 'Playground', icon: '💻' },
   { to: '/visual', label: 'Visual', icon: '🧠' },
-  { to: '/creatives', label: 'Desain', icon: '🎨' },
+  { to: '/creatives', label: 'Canva', icon: '🎨' },
   { to: '/ui-editor', label: 'AI UI', icon: '🖌️' },
   { to: '/social', label: 'Sosial', icon: '👥' },
   { to: '/settings', label: 'Pengaturan', icon: '⚙️' },
@@ -193,7 +194,7 @@ export default function RootLayout() {
                     : { color: 'var(--ui-sidebar-text)' }
                 }
               >
-                🎨 Desain
+                🎨 Canva
               </NavLink>
             </>
           )}

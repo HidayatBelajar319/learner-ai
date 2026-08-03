@@ -63,6 +63,34 @@ hingga personalisasi UI aplikasi itu sendiri — semuanya digerakkan oleh AI.
 
 ---
 
+## AI Chat (Asisten Terpadu)
+
+**AI Chat** adalah asisten tunggal bergaya ChatGPT/Gemini yang menggabungkan
+seluruh kemampuan AI LearnerAI dalam satu percakapan. Diakses dari menu
+sidebar **AI Chat** (`/ai-chat`).
+
+- **Mode Auto** — AI mendeteksi sendiri apakah permintaan berupa chat,
+  pembuatan desain, atau perubahan UI aplikasi.
+- **Mode Chat** — Tutor cerdas dengan akses tools platform (mata pelajaran,
+  materi, statistik belajar, rencana belajar, persiapan quiz).
+- **Mode Desain** — Membuat desain Canva dari deskripsi, lengkap dengan
+  pratinjau mini di dalam chat dan tombol **"Buka di Canva"** untuk membuka
+  hasilnya di editor Creatives (tersimpan otomatis).
+- **Mode UI** — Mengusulkan perubahan tampilan aplikasi (warna aksen,
+  sidebar, font, halaman/menu baru) dalam bentuk kartu usulan yang bisa
+  langsung **diterapkan** tanpa keluar dari chat.
+- Menampilkan provider & model yang dipakai, serta jejak tools yang digunakan.
+
+### Hubungan dengan Fitur Lain
+
+| Menu              | Kemampuan AI |
+| ----------------- | ------------ |
+| AI Chat (baru)    | Chat + Desain + UI terpadu |
+| Creatives (Canva) | Editor desain & library desain |
+| AI UI             | Pengaturan tema & halaman kustom |
+
+---
+
 ## Integrasi Provider AI
 
 Semua kemampuan AI Creatives menggunakan sistem provider tunggal LearnerAI:
